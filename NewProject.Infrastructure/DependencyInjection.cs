@@ -11,7 +11,7 @@ namespace NewProject.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            services.AddDbContext<ProjectDbContext>(options =>
+            services.AddDbContext<MultipleFormatDbContext>(options =>
                 options.UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection")));
 

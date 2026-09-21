@@ -8,9 +8,9 @@ using NewProject.Infrastructure.Persistence;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly ProjectDbContext _ctx;
+    private readonly MultipleFormatDbContext _ctx;
 
-    public AuthController(ProjectDbContext ctx)
+    public AuthController(MultipleFormatDbContext ctx)
     {
         _ctx = ctx;
     }

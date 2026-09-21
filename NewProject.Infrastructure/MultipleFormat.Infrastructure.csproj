@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NewProject.Common\CafeeService.Common.csproj" />
-    <ProjectReference Include="..\NewProject.Domain\CafeeService.Domain.csproj" />
+    <ProjectReference Include="..\NewProject.Common\MultipleFormat.Common.csproj" />
+    <ProjectReference Include="..\NewProject.Domain\MultipleFormat.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

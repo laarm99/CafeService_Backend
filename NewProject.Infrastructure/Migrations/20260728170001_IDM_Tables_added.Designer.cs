@@ -11,7 +11,7 @@ using NewProject.Infrastructure.Persistence;
 
 namespace NewProject.Infrastructure.Migrations
 {
-    [DbContext(typeof(ProjectDbContext))]
+    [DbContext(typeof(MultipleFormatDbContext))]
     [Migration("20260728170001_IDM_Tables_added")]
     partial class IDM_Tables_added
     {

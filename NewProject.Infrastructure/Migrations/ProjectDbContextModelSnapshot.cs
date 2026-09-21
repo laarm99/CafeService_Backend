@@ -10,7 +10,7 @@ using NewProject.Infrastructure.Persistence;
 
 namespace NewProject.Infrastructure.Migrations
 {
-    [DbContext(typeof(ProjectDbContext))]
+    [DbContext(typeof(MultipleFormatDbContext))]
     partial class ProjectDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

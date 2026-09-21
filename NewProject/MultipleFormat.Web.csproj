@@ -30,9 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NewProject.Application\CafeeService.Application.csproj" />
-    <ProjectReference Include="..\NewProject.Common\CafeeService.Common.csproj" />
-    <ProjectReference Include="..\NewProject.Infrastructure\CafeeService.Infrastructure.csproj" />
+    <ProjectReference Include="..\NewProject.Application\MultipleFormat.Application.csproj" />
+    <ProjectReference Include="..\NewProject.Common\MultipleFormat.Common.csproj" />
+    <ProjectReference Include="..\NewProject.Infrastructure\MultipleFormat.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

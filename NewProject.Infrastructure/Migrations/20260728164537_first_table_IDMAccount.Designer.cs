@@ -11,7 +11,7 @@ using NewProject.Infrastructure.Persistence;
 
 namespace NewProject.Infrastructure.Migrations
 {
-    [DbContext(typeof(ProjectDbContext))]
+    [DbContext(typeof(MultipleFormatDbContext))]
     [Migration("20260728164537_first_table_IDMAccount")]
     partial class first_table_IDMAccount
     {

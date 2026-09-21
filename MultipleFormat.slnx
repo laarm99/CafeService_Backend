@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="NewProject.Application/MultipleFormat.Application.csproj" Id="4ebdbf10-d027-4eb4-a735-37d66ce3e53e" />
+  <Project Path="NewProject.Common/MultipleFormat.Common.csproj" Id="a4eab29f-f9b2-4220-adb1-5d4f04db17c7" />
+  <Project Path="NewProject.Domain/MultipleFormat.Domain.csproj" Id="49553277-f3c9-49d8-af13-5a6b8128a7e7" />
+  <Project Path="NewProject.Infrastructure/MultipleFormat.Infrastructure.csproj" Id="db40f28d-10be-4c60-9aa7-fd770ebd2998" />
+  <Project Path="NewProject/MultipleFormat.Web.csproj" />
+</Solution>
