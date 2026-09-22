@@ -1,6 +1,6 @@
-@NewProject_HostAddress = http://localhost:5103
+@MultipleFormat_HostAddress = http://localhost:5103
 
-GET {{NewProject_HostAddress}}/weatherforecast/
+GET {{MultipleFormat_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
