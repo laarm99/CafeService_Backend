@@ -9,21 +9,17 @@ namespace MultipleFormat.Domain.Entities.FlowRequests
     public class DepartmentShiftChangeRequest
     {
         public int Id { get; set; }
-
         public int FormRequestId { get; set; }
-
         public string CurrentDepartment { get; set; } = string.Empty;
-
         public string NewDepartment { get; set; } = string.Empty;
-
         public string CurrentShift { get; set; } = string.Empty;
-
         public string NewShift { get; set; } = string.Empty;
-
+        public string CurrentPlant { get; set; } = string.Empty;
+        public string NewPlant { get; set; } = string.Empty;
+        public string CurrentSupervisor { get; set; } = string.Empty;
+        public string NewSupervisor { get; set; } = string.Empty;
         public DateTime EffectiveDate { get; set; }
-
         public string? Reason { get; set; }
-
         public virtual FormRequest FormRequest { get; set; } = null!;
     }
 }

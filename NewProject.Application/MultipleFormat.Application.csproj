@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NewProject.Common\MultipleFormat.Common.csproj" />
     <ProjectReference Include="..\NewProject.Domain\MultipleFormat.Domain.csproj" />
+    <ProjectReference Include="..\NewProject.Infrastructure\MultipleFormat.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
