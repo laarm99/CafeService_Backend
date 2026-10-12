@@ -219,7 +219,7 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("PERMISSION_DAYS");
 
-                    b.Property<DateTime?>("ReturnDate")
+                    b.Property<DateTime>("ReturnDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("RETURN_DATE");
 

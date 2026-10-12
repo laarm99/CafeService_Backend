@@ -21,7 +21,7 @@ namespace MultipleFormat.Domain.Entities.FlowRequests
         public DateTime EndDate { get; set; }
 
         [Column("RETURN_DATE")]
-        public DateTime? ReturnDate { get; set; }
+        public DateTime ReturnDate { get; set; }
 
         [Column("PERMISSION_DAYS")]
         public int PermissionDays { get; set; }
