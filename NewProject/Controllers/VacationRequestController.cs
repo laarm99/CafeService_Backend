@@ -57,7 +57,7 @@ namespace MultipleFormat.Web.Controllers
 
             CurrentUserDto employee = currentUserResult.Data!;
 
-            ServiceResult<List<VacationRequestDTO>> result = await _vacationRequestService.GetByEmployeeAsync(employee.Id, cancellationToken);
+            ServiceResult<List<VacationRequestDTO>> result = await _vacationRequestService.GetVacationRequestsByEmployeeAsync(employee.Id, cancellationToken);
 
             if (!result.IsSuccess)
             {

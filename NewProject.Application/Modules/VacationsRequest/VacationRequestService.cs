@@ -72,7 +72,7 @@ namespace MultipleFormat.Application.Modules.VacationsRequest
             return ServiceResult<int>.Success(formRequestData.Id);
         }
 
-        public async Task<ServiceResult<List<VacationRequestDTO>>> GetByEmployeeAsync(int employeeId, CancellationToken cancellationToken = default)
+        public async Task<ServiceResult<List<VacationRequestDTO>>> GetVacationRequestsByEmployeeAsync(int employeeId, CancellationToken cancellationToken = default)
         {
             var query = from vr in _ctx.VacationRequests.AsNoTracking()
                         join fr in _ctx.FormRequests.AsNoTracking() on vr.FormRequestId equals fr.Id
