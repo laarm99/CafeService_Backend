@@ -6,7 +6,7 @@ namespace MultipleFormat.Application.Modules.ChangesDepOrShifRequest.DTOs
 {
     public class ChangesDepOrShiftCreateRequestDTO
     {
-        public string EmployeeId { get; set; } = string.Empty;      
+        public int EmployeeId { get; set; }     
         public string NewPlant { get; set; } = string.Empty;
         public string NewShift { get; set; } = string.Empty;
         public string NewDepartment { get; set; } = string.Empty;

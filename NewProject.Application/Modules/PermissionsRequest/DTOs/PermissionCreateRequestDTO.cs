@@ -6,7 +6,7 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest.DTOs
 {
     public class PermissionCreateRequestDTO
     {
-        public string EmployeeId { get; set; } = string.Empty;
+        public int EmployeeId { get; set; }
 
         public DateTime StartDate { get; set; }
 

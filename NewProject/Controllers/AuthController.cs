@@ -1,40 +1,165 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MultipleFormat.Domain.Common.Enums;
+using MultipleFormat.Domain.Entities;
 using NewProject.Domain.Entities.IDM;
 using NewProject.Infrastructure.Persistence;
+using MultipleFormat.Web.Controllers.DTOs;
+using NewProject.Application.Common.CurrentUser;
+using NewProject.Common.Results;
+using System.Security.Principal;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 [Authorize]
 [ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    private static readonly string DefaultRoleName =
+        nameof(Roles.GeneralUser);
     private readonly MultipleFormatDbContext _ctx;
+    private readonly ICurrentUserService _currentUserService;
 
-    public AuthController(MultipleFormatDbContext ctx)
+    public AuthController(MultipleFormatDbContext ctx, ICurrentUserService currentUserService)
     {
         _ctx = ctx;
+        _currentUserService = currentUserService;
     }
 
+    [AllowAnonymous]
     [HttpGet("login")]
-    public IActionResult Login()
+    public async Task<IActionResult> Login(CancellationToken cancellationToken)
     {
-        var userName = User.Identity?.Name?
-            .Split('\\')
-            .Last()
-            .ToUpper();
+        ServiceResult<CurrentUserDto> currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, cancellationToken);
 
-        var account = _ctx.IDMAccounts
-            .FirstOrDefault(x =>
-                x.DomainUserName == userName &&
-                x.IsActive);
-
-        if (account == null)
+        if (!currentUserResult.IsSuccess || currentUserResult.Data == null)
         {
-            return Unauthorized(
-                "User is not authorized."
-            );
+            IIdentity identity = User.Identity;
+            if (identity?.IsAuthenticated != true)
+            {
+                return Unauthorized();
+            }
+
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "El usuario no tiene acceso habilitado a la aplicación." });
         }
 
-        return Ok(account);
+        CurrentUserDto employee = currentUserResult.Data;
+        string userName = employee.DomainUserName;
+
+        // Buscar también cuentas inactivas para no duplicarlas.
+        IDMAccount account = await _ctx.IDMAccounts
+            .FirstOrDefaultAsync(
+                x => x.DomainUserName == userName,
+                cancellationToken);
+
+        if (account != null)
+        {
+            if (!account.IsActive)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    new
+                    {
+                        message =
+                            "El usuario no tiene acceso habilitado a la aplicación."
+                    });
+            }
+
+            // Mantener la cuenta y sus roles existentes. Devolver DTO para no exponer la entidad EF directamente.
+            IdmAccountDto existingDto = new IdmAccountDto
+            {
+                DomainUserName = account.DomainUserName,
+                FullName = account.FullName,
+                Email = account.Email,
+                IsActive = account.IsActive,
+                CreatedDate = account.CreatedDate
+            };
+
+            return Ok(existingDto);
+        }
+
+        // Buscar GeneralUser en IDM_ROLE.
+        IDMRole defaultRole = await _ctx.IDMRoles
+            .FirstOrDefaultAsync(
+                x => x.RoleName == DefaultRoleName &&
+                     x.IsActive,
+                cancellationToken);
+
+        if (defaultRole == null)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new
+                {
+                    message =
+                        "El acceso no está disponible por un problema de configuración."
+                });
+        }
+
+        // Crear la cuenta con los datos de MFR_EMPLOYEES.
+        IDMAccount newAccount = new IDMAccount
+        {
+            DomainUserName = userName,
+            FullName = employee.FullName,
+            Email = employee.Email,
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
+        };
+
+        // Relacionar la cuenta nueva con GeneralUser.
+        // EF Core utilizará el Id generado para la cuenta
+        // y el Id del rol encontrado en la tabla.
+        IDMAccountRole accountRole = new IDMAccountRole
+        {
+            Account = newAccount,
+            Role = defaultRole
+        };
+
+        _ctx.IDMAccounts.Add(newAccount);
+        _ctx.IDMAccountRoles.Add(accountRole);
+
+        // Guardar cuenta y asignación de rol juntas.
+        try
+        {
+            await _ctx.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Posible creación concurrente: intentar recuperar la cuenta existente y devolverla.
+            IDMAccount existing = await _ctx.IDMAccounts
+                .FirstOrDefaultAsync(x => x.DomainUserName == userName, cancellationToken);
+
+            if (existing != null)
+            {
+                IdmAccountDto existingDto = new IdmAccountDto
+                {
+                    DomainUserName = existing.DomainUserName,
+                    FullName = existing.FullName,
+                    Email = existing.Email,
+                    IsActive = existing.IsActive,
+                    CreatedDate = existing.CreatedDate
+                };
+
+                return Ok(existingDto);
+            }
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error creando la cuenta." });
+        }
+
+        IdmAccountDto newDto = new IdmAccountDto
+        {
+            DomainUserName = newAccount.DomainUserName,
+            FullName = newAccount.FullName,
+            Email = newAccount.Email,
+            IsActive = newAccount.IsActive,
+            CreatedDate = newAccount.CreatedDate
+        };
+
+        return Ok(newDto);
+
     }
 }

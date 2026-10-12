@@ -6,6 +6,7 @@ using NewProject.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace MultipleFormat.Application.Modules.VacationsRequest
 {
@@ -18,32 +19,82 @@ namespace MultipleFormat.Application.Modules.VacationsRequest
             _ctx = ctx;
         }
 
-        public async Task<ServiceResult<int>> CreateVacationRequest(VacationCreateRequestDTO dto)
+        public async Task<ServiceResult<int>> CreateVacationRequest(VacationCreateRequestDTO dto, int employeeId)
         {
-            FormRequest formRequestData = new()
+            // Basic validations
+            if (dto.StartDate > dto.EndDate)
             {
-                EmployeeId = dto.EmployeeId,
+                return ServiceResult<int>.BadRequest("StartDate must be before or equal to EndDate.");
+            }
+
+            if (dto.VacationDays <= 0)
+            {
+                return ServiceResult<int>.BadRequest("VacationDays must be greater than zero.");
+            }
+
+            if (dto.ReturnDate < dto.EndDate)
+            {
+                return ServiceResult<int>.BadRequest("ReturnDate cannot be before EndDate.");
+            }
+
+            var formRequestData = new FormRequest()
+            {
+                EmployeeId = employeeId,
                 FormType = FormType.Vacation,
                 Status = RequestStatus.Submitted,
                 CreatedDate = DateTime.UtcNow,
                 Comments = dto.Comments
             };
 
-            _ctx.FormRequests.Add(formRequestData);            
-
-            VacationRequest vacationRequestData = new()
+            // Associate VacationRequest using navigation property so EF will set FK on save
+            var vacationRequestData = new VacationRequest()
             {
-                FormRequestId = formRequestData.Id,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 ReturnDate = dto.ReturnDate,
-                VacationDays = dto.VacationDays
-            };  
-            
+                VacationDays = dto.VacationDays,
+                FormRequest = formRequestData
+            };
+
+            _ctx.FormRequests.Add(formRequestData);
             _ctx.VacationRequests.Add(vacationRequestData);
-            await _ctx.SaveChangesAsync();
+
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // Could be constraint violation or concurrency issue
+                return ServiceResult<int>.InternalServerError("Error saving vacation request.");
+            }
 
             return ServiceResult<int>.Success(formRequestData.Id);
+        }
+
+        public async Task<ServiceResult<List<VacationRequestDTO>>> GetByEmployeeAsync(int employeeId, CancellationToken cancellationToken = default)
+        {
+            var query = from vr in _ctx.VacationRequests.AsNoTracking()
+                        join fr in _ctx.FormRequests.AsNoTracking() on vr.FormRequestId equals fr.Id
+                        where fr.EmployeeId == employeeId
+                        orderby fr.CreatedDate descending
+                        select new VacationRequestDTO
+                        {
+                            FormRequestId = fr.Id,
+                            FormType = fr.FormType,
+                            Status = fr.Status,
+                            CreatedDate = fr.CreatedDate,
+                            SubmittedDate = fr.SubmittedDate,
+                            Comments = fr.Comments,
+                            StartDate = vr.StartDate,
+                            EndDate = vr.EndDate,
+                            ReturnDate = vr.ReturnDate,
+                            VacationDays = vr.VacationDays
+                        };
+
+            var list = await query.ToListAsync(cancellationToken);
+
+            return ServiceResult<List<VacationRequestDTO>>.Success(list);
         }
     }
 }

@@ -3,9 +3,13 @@ using MultipleFormat.Domain.Common.Enums;
 using MultipleFormat.Domain.Entities.FlowRequests;
 using NewProject.Common.Results;
 using NewProject.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
 {    
@@ -18,30 +22,65 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
             _ctx = ctx;
         }
 
-        public async Task<ServiceResult<int>> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto)
+        public async Task<ServiceResult<int>> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto, int employeeId)
         {
-            FormRequest formRequestData = new()
+            var formRequestData = new FormRequest()
             {
-                EmployeeId = dto.EmployeeId,
-                FormType = FormType.DepartmentShiftChange,
+                EmployeeId = employeeId,
+                FormType = FormType.TimeAdjustment,
                 Status = RequestStatus.Submitted,
                 CreatedDate = DateTime.UtcNow,
+                SubmittedDate = DateTime.UtcNow,
+                SubmittedById = employeeId
             };
 
-            _ctx.FormRequests.Add(formRequestData);
-
-            TimeAdjustmentRequest timeAdjustmentRequestData = new()
+            var timeAdjustmentRequestData = new TimeAdjustmentRequest()
             {
-                FormRequestId = formRequestData.Id,
                 AdjustmentDate = dto.AdjustmentDate,
                 MissingPunchType = dto.MissingPunchType,
                 EntryTime = dto.EntryTime,
-                ExitTime = dto.ExitTime
+                ExitTime = dto.ExitTime,
+                FormRequest = formRequestData
             };
 
+            _ctx.FormRequests.Add(formRequestData);
             _ctx.TimeAdjustmentRequests.Add(timeAdjustmentRequestData);
-            await _ctx.SaveChangesAsync();
+
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                return ServiceResult<int>.InternalServerError("Error saving time adjustment request.");
+            }
+
             return ServiceResult<int>.Success(formRequestData.Id);
+        }
+
+        public async Task<ServiceResult<List<TimeAdjustmentRequestDto>>> GetByEmployeeAsync(int employeeId, CancellationToken cancellationToken = default)
+        {
+            var query = from ta in _ctx.TimeAdjustmentRequests.AsNoTracking()
+                        join fr in _ctx.FormRequests.AsNoTracking() on ta.FormRequestId equals fr.Id
+                        where fr.EmployeeId == employeeId
+                        orderby fr.CreatedDate descending
+                        select new TimeAdjustmentRequestDto
+                        {
+                            FormRequestId = fr.Id,
+                            FormType = fr.FormType,
+                            Status = (int)fr.Status,
+                            CreatedDate = fr.CreatedDate,
+                            SubmittedDate = fr.SubmittedDate,
+                            Comments = fr.Comments,
+                            AdjustmentDate = ta.AdjustmentDate,
+                            MissingPunchType = ta.MissingPunchType,
+                            EntryTime = ta.EntryTime,
+                            ExitTime = ta.ExitTime
+                        };
+
+            List<TimeAdjustmentRequestDto> list = await query.ToListAsync(cancellationToken);
+
+            return ServiceResult<List<TimeAdjustmentRequestDto>>.Success(list);
         }
 
     }

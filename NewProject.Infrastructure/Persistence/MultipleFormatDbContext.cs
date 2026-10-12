@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MultipleFormat.Domain.Entities;
 using MultipleFormat.Domain.Entities.FlowRequests;
 using NewProject.Domain.Entities;
 using NewProject.Domain.Entities.IDM;
@@ -22,11 +23,12 @@ namespace NewProject.Infrastructure.Persistence
         public DbSet<PermissionRequest> PermissionRequests { get; set; }
         public DbSet<TimeAdjustmentRequest> TimeAdjustmentRequests { get; set; }
         public DbSet<DepartmentShiftChangeRequest> DepartmentShiftChangeRequests { get; set; }
+        public DbSet<Employee> Employees { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<IDMAccount>(entity =>
-            {                
+            {
                 entity.HasKey(x => x.Id);
 
                 entity.Property(x => x.Id)
@@ -166,6 +168,39 @@ namespace NewProject.Infrastructure.Persistence
                       .HasForeignKey(x => x.FormRequestId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<Employee>(entity =>
+             {
+                 entity.HasKey(x => x.Id);
+                 entity.Property(x => x.Id)
+                       .ValueGeneratedOnAdd();
+                 entity.Property(x => x.EmployeeNumber)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                 entity.Property(x => x.DomainUserName)
+                 .IsRequired()
+                 .HasMaxLength(50);
+
+                 entity.Property(x => x.FullName)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                 entity.Property(x => x.Email)
+                 .HasMaxLength(200);
+
+                 entity.Property(x => x.Department)
+                 .HasMaxLength(100);
+
+                 entity.Property(x => x.Shift)
+                 .HasMaxLength(50);
+
+                 entity.HasIndex(x => x.EmployeeNumber)
+                 .IsUnique();
+
+                 entity.HasIndex(x => x.DomainUserName)
+                 .IsUnique();
+             });
 
             base.OnModelCreating(modelBuilder);
         }

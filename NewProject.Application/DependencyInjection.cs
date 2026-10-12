@@ -21,6 +21,7 @@ namespace NewProject.Application
             services.AddScoped<PermissionRequestService>();
             services.AddScoped<ChangesDepOrShiftRequestService>();
             services.AddScoped<TimeAdjustmentRequestService>();           
+            services.AddScoped<NewProject.Application.Common.CurrentUser.ICurrentUserService, NewProject.Application.Common.CurrentUser.CurrentUserService>();
 
             return services;
         }

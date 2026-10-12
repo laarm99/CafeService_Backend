@@ -22,38 +22,126 @@ namespace NewProject.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MultipleFormat.Domain.Entities.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("DEPARTMENT");
+
+                    b.Property<string>("DomainUserName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("DOMAIN_USER_NAME");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("EmployeeNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("EMPLOYEE_NUMBER");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("FULL_NAME");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("IS_ACTIVE");
+
+                    b.Property<string>("Shift")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("SHIFT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainUserName")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeNumber")
+                        .IsUnique();
+
+                    b.ToTable("MFR_EMPLOYEES");
+                });
+
             modelBuilder.Entity("MultipleFormat.Domain.Entities.FlowRequests.DepartmentShiftChangeRequest", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CurrentDepartment")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CURRENT_DEPARTMENT");
+
+                    b.Property<string>("CurrentPlant")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CURRENT_PLANT");
 
                     b.Property<string>("CurrentShift")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CURRENT_SHIFT");
+
+                    b.Property<string>("CurrentSupervisor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CURRENT_SUPERVISOR");
 
                     b.Property<DateTime>("EffectiveDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("EFFECTIVE_DATE");
 
                     b.Property<int>("FormRequestId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("FORM_REQUEST_ID");
 
                     b.Property<string>("NewDepartment")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("NEW_DEPARTMENT");
+
+                    b.Property<string>("NewPlant")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("NEW_PLANT");
 
                     b.Property<string>("NewShift")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("NEW_SHIFT");
+
+                    b.Property<string>("NewSupervisor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("NEW_SUPERVISOR");
 
                     b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("REASON");
 
                     b.HasKey("Id");
 
@@ -66,34 +154,46 @@ namespace NewProject.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Comments")
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("COMMENTS");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATED_DATE");
 
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
+                    b.Property<int>("EmployeeId")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int")
+                        .HasColumnName("EMPLOYEE_ID");
 
                     b.Property<string>("FormType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("FORM_TYPE");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<int>("SubmittedById")
+                        .HasColumnType("int")
+                        .HasColumnName("SUBMITTED_BY_ID");
 
                     b.Property<DateTime?>("SubmittedDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("SUBMITTED_DATE");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
 
                     b.ToTable("MFR_FORM_REQUEST");
                 });
@@ -102,21 +202,26 @@ namespace NewProject.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("END_DATE");
 
                     b.Property<int>("FormRequestId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("FORM_REQUEST_ID");
 
                     b.Property<int>("PermissionDays")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("PERMISSION_DAYS");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("START_DATE");
 
                     b.HasKey("Id");
 
@@ -129,25 +234,31 @@ namespace NewProject.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("AdjustmentDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ADJUSTMENT_DATE");
 
                     b.Property<TimeSpan?>("EntryTime")
-                        .HasColumnType("time");
+                        .HasColumnType("time")
+                        .HasColumnName("ENTRY_TIME");
 
                     b.Property<TimeSpan?>("ExitTime")
-                        .HasColumnType("time");
+                        .HasColumnType("time")
+                        .HasColumnName("EXIT_TIME");
 
                     b.Property<int>("FormRequestId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("FORM_REQUEST_ID");
 
                     b.Property<string>("MissingPunchType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("MISSING_PUNCH_TYPE");
 
                     b.HasKey("Id");
 
@@ -160,24 +271,30 @@ namespace NewProject.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("END_DATE");
 
                     b.Property<int>("FormRequestId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("FORM_REQUEST_ID");
 
                     b.Property<DateTime>("ReturnDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("RETURN_DATE");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("START_DATE");
 
                     b.Property<int>("VacationDays")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("VACATION_DAYS");
 
                     b.HasKey("Id");
 
@@ -282,6 +399,17 @@ namespace NewProject.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("FormRequest");
+                });
+
+            modelBuilder.Entity("MultipleFormat.Domain.Entities.FlowRequests.FormRequest", b =>
+                {
+                    b.HasOne("MultipleFormat.Domain.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("MultipleFormat.Domain.Entities.FlowRequests.PermissionRequest", b =>
