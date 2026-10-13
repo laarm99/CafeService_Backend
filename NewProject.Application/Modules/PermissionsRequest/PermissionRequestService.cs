@@ -20,6 +20,13 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
 
         public async Task<ServiceResult<int>> CreatePermissionRequest(PermissionCreateRequestDTO dto)
         {
+            // Validate attachments for types that require comprobantes (Marriage, Birth, Death)
+            if ((dto.PermissionType == PermissionType.Marriage || dto.PermissionType == PermissionType.Birth || dto.PermissionType == PermissionType.Death)
+                && (dto.Attachments == null || dto.Attachments.Count == 0))
+            {
+                return ServiceResult<int>.BadRequest("Adjuntos comprobatorios requeridos para el tipo de permiso seleccionado.");
+            }
+
             FormRequest formRequestData = new()
             {
                 EmployeeId = dto.EmployeeId,
@@ -37,14 +44,19 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
             PermissionRequest permissionRequestData = new()
             {
                 FormRequestId = formRequestData.Id,
+                PermissionType = dto.PermissionType,
                 StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                PermissionDays = dto.PermissionDays
+                EndDate = dto.EndDate ?? dto.StartDate,
+                ReturnDate = dto.ReturnDate ?? dto.StartDate,
+                PermissionDays = dto.PermissionDays,
+                SwapDetail = dto.SwapDetail
             };
 
             _ctx.PermissionRequests.Add(permissionRequestData);
 
             await _ctx.SaveChangesAsync();
+
+            // Note: file saving for Attachments is not implemented here. Save files to storage and persist references in a separate table.
 
             return ServiceResult<int>.Success(formRequestData.Id);
         }

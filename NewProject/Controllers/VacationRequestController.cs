@@ -23,8 +23,8 @@ namespace MultipleFormat.Web.Controllers
             _currentUserService = currentUserService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(VacationCreateRequestDTO dto)
+        [HttpPost("create-vacation-request")]
+        public async Task<IActionResult> CreateVacationRequest(VacationCreateRequestDTO dto)
         {
             ServiceResult<CurrentUserDto> currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, HttpContext.RequestAborted);
 

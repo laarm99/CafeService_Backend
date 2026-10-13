@@ -21,8 +21,8 @@ namespace NewProject.Controllers
             _currentUserService = currentUserService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(ChangesDepOrShiftCreateRequestDTO dto)
+        [HttpPost("create-change-request")]
+        public async Task<IActionResult> CreateChangeRequest(ChangesDepOrShiftCreateRequestDTO dto)
         {
             var result = await _changesDepOrShiftRequestService.CreateChangesDepOrShiftRequests(dto);
 

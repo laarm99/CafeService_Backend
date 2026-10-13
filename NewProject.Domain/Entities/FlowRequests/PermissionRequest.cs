@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using MultipleFormat.Domain.Common.Enums;
 
 namespace MultipleFormat.Domain.Entities.FlowRequests
 {
@@ -14,6 +15,9 @@ namespace MultipleFormat.Domain.Entities.FlowRequests
         [Column("FORM_REQUEST_ID")]
         public int FormRequestId { get; set; }
 
+        [Column("PERMISSION_TYPE")]
+        public PermissionType PermissionType { get; set; }
+
         [Column("START_DATE")]
         public DateTime StartDate { get; set; }
 
@@ -25,6 +29,10 @@ namespace MultipleFormat.Domain.Entities.FlowRequests
 
         [Column("PERMISSION_DAYS")]
         public int PermissionDays { get; set; }
+
+        // Detail for swap/permuta (nullable)
+        [Column("SWAP_DETAIL")]
+        public string? SwapDetail { get; set; }
 
         public virtual FormRequest FormRequest { get; set; } = null!;
     }

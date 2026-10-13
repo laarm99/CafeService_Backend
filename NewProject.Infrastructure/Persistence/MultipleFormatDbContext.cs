@@ -133,6 +133,13 @@ namespace NewProject.Infrastructure.Persistence
                 entity.Property(x => x.Id)
                       .ValueGeneratedOnAdd();
 
+                entity.Property(x => x.PermissionType)
+                      .HasConversion<string>()
+                      .IsRequired();
+
+                entity.Property(x => x.SwapDetail)
+                      .HasMaxLength(1000);
+
                 entity.HasOne(x => x.FormRequest)
                       .WithMany()
                       .HasForeignKey(x => x.FormRequestId)
@@ -197,6 +204,15 @@ namespace NewProject.Infrastructure.Persistence
 
                  entity.Property(x => x.Position)
                  .HasMaxLength(100);
+
+                 // Supervisor name (nullable to not break existing data)
+                 entity.Property(x => x.SupervisorName)
+                       .HasMaxLength(200);
+
+                 // Plant stored as string in DB (nullable)
+                 entity.Property(x => x.Plant)
+                       .HasConversion<string>()
+                       .HasMaxLength(50);
 
                  entity.HasIndex(x => x.EmployeeNumber)
                  .IsUnique();

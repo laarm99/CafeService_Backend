@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using MultipleFormat.Domain.Common.Enums;
 
 namespace MultipleFormat.Domain.Entities
 {
@@ -31,6 +32,12 @@ namespace MultipleFormat.Domain.Entities
 
         [Column("POSITION")]
         public string Position { get; set; } = string.Empty;
+
+        [Column("SUPERVISOR_NAME")]
+        public string? SupervisorName { get; set; }
+
+        [Column("PLANT")]
+        public PlantType? Plant { get; set; }
 
         [Column("IS_ACTIVE")]
         public bool IsActive { get; set; }

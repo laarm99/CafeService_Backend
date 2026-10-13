@@ -19,8 +19,8 @@ namespace MultipleFormat.Web.Controllers
             _currentUserService = currentUserService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] PermissionCreateRequestDTO dto)
+        [HttpPost("create-permission-request")]
+        public async Task<IActionResult> CreatePermissionRequest([FromBody] PermissionCreateRequestDTO dto)
         {
             var result = await _permissionRequestService.CreatePermissionRequest(dto);
             if (!result.IsSuccess)

@@ -22,8 +22,8 @@ namespace MultipleFormat.Web.Controllers
             _currentUserService = currentUserService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(TimeAdjustmentCreateRequestDTO dto)
+        [HttpPost("create-time-adjustment-request")]
+        public async Task<IActionResult> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto)
         {
             ServiceResult<CurrentUserDto> currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, HttpContext.RequestAborted);
 
@@ -44,8 +44,8 @@ namespace MultipleFormat.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("me")]
-        public async Task<IActionResult> GetMine(CancellationToken cancellationToken)
+        [HttpGet("get-time-adjustmen")]
+        public async Task<IActionResult> GetTimeAdjustent(CancellationToken cancellationToken)
         {
             ServiceResult<CurrentUserDto> currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, cancellationToken);
 

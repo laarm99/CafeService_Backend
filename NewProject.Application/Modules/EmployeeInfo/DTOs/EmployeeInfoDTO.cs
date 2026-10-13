@@ -11,5 +11,7 @@ namespace MultipleFormat.Application.Modules.EmployeeInfo.DTOs
         public string FullName { get; set; } = string.Empty;
         public string Position { get; set; } = string.Empty;
         public string Department { get; set; } = string.Empty;
+        public string? SupervisorName { get; set; }
+        public string? Plant { get; set; }
     }
 }

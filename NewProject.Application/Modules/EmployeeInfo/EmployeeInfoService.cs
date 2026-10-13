@@ -20,20 +20,23 @@ namespace MultipleFormat.Application.Modules.EmployeeInfo
 
         public async Task<ServiceResult<EmployeeInfoDTO>> GetEmployeeInfoByEmployeeIdAsync(int employeeId, CancellationToken cancellationToken = default)
         {
-            EmployeeInfoDTO? dto = await _ctx.Employees
-                 .Where(e => e.Id == employeeId)
-                 .Select(e => new EmployeeInfoDTO
-                 {
-                     CurrentDate = DateTime.UtcNow,
-                     EmployeeNumber = e.EmployeeNumber,
-                     FullName = e.FullName,
-                     Position = e.Position,
-                     Department = e.Department
-                 })
-                 .FirstOrDefaultAsync(cancellationToken);
+            var employee = await _ctx.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
-            if (dto == null)
+            if (employee == null)
                 return ServiceResult<EmployeeInfoDTO>.NotFound("Empleado no encontrado");
+
+            var dto = new EmployeeInfoDTO
+            {
+                CurrentDate = DateTime.UtcNow,
+                EmployeeNumber = employee.EmployeeNumber,
+                FullName = employee.FullName,
+                Position = employee.Position,
+                Department = employee.Department,
+                SupervisorName = employee.SupervisorName,
+                Plant = employee.Plant.HasValue ? employee.Plant.Value.ToString().Replace('_', ' ') : null
+            };
 
             return ServiceResult<EmployeeInfoDTO>.Success(dto);
         }

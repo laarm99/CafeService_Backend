@@ -65,6 +65,11 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("IS_ACTIVE");
 
+                    b.Property<string>("Plant")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PLANT");
+
                     b.Property<string>("Position")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -76,6 +81,11 @@ namespace NewProject.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("SHIFT");
+
+                    b.Property<string>("SupervisorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("SUPERVISOR_NAME");
 
                     b.HasKey("Id");
 
@@ -225,6 +235,11 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("PERMISSION_DAYS");
 
+                    b.Property<string>("PermissionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PERMISSION_TYPE");
+
                     b.Property<DateTime>("ReturnDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("RETURN_DATE");
@@ -232,6 +247,11 @@ namespace NewProject.Infrastructure.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("START_DATE");
+
+                    b.Property<string>("SwapDetail")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("SWAP_DETAIL");
 
                     b.HasKey("Id");
 
