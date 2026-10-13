@@ -195,6 +195,9 @@ namespace NewProject.Infrastructure.Persistence
                  entity.Property(x => x.Shift)
                  .HasMaxLength(50);
 
+                 entity.Property(x => x.Position)
+                 .HasMaxLength(100);
+
                  entity.HasIndex(x => x.EmployeeNumber)
                  .IsUnique();
 

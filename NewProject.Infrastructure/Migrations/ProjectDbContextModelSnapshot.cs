@@ -65,6 +65,12 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("IS_ACTIVE");
 
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("POSITION");
+
                     b.Property<string>("Shift")
                         .IsRequired()
                         .HasMaxLength(50)

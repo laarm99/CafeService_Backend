@@ -29,6 +29,9 @@ namespace MultipleFormat.Domain.Entities
         [Column("SHIFT")]
         public string Shift { get; set; } = string.Empty;
 
+        [Column("POSITION")]
+        public string Position { get; set; } = string.Empty;
+
         [Column("IS_ACTIVE")]
         public bool IsActive { get; set; }
     }

@@ -45,8 +45,8 @@ namespace MultipleFormat.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-form-data")]
-        public async Task<IActionResult> GetMine(CancellationToken cancellationToken)
+        [HttpGet("get-vacation-data")]
+        public async Task<IActionResult> GetVacationData(CancellationToken cancellationToken)
         {
             ServiceResult<CurrentUserDto> currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, cancellationToken);
 

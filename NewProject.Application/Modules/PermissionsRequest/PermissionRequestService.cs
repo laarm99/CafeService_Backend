@@ -51,7 +51,7 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
 
         public async Task<ServiceResult<List<VacationRequestDTO>>> GetPermissionRequestByEmployeeAsync(int employeeId, CancellationToken cancellationToken = default)
         {
-            var requests = await _ctx.FormRequests
+            List<VacationRequestDTO> requests = await _ctx.FormRequests
                 .Where(fr => fr.EmployeeId == employeeId && fr.FormType == FormType.Permission)
                 .Select(fr => new VacationRequestDTO
                 {
