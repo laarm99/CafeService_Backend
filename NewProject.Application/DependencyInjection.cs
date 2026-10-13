@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MultipleFormat.Application.Modules.ChangesDepOrShifRequest;
+using MultipleFormat.Application.Modules.EmployeeInfo;
 using MultipleFormat.Application.Modules.PermissionsRequest;
 using MultipleFormat.Application.Modules.TimesAdjustmentRequest;
 using MultipleFormat.Application.Modules.VacationsRequest;
+using NewProject.Application.Common.CurrentUser;
 using NewProject.Application.Modules.Dashboard;
 using System;
 using System.Collections.Generic;
@@ -21,7 +23,8 @@ namespace NewProject.Application
             services.AddScoped<PermissionRequestService>();
             services.AddScoped<ChangesDepOrShiftRequestService>();
             services.AddScoped<TimeAdjustmentRequestService>();           
-            services.AddScoped<NewProject.Application.Common.CurrentUser.ICurrentUserService, NewProject.Application.Common.CurrentUser.CurrentUserService>();
+            services.AddScoped<EmployeeInfoService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;
         }
