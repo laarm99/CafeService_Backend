@@ -61,6 +61,10 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("FULL_NAME");
 
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("HIRE_DATE");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
                         .HasColumnName("IS_ACTIVE");
@@ -284,6 +288,11 @@ namespace NewProject.Infrastructure.Migrations
                     b.Property<int>("FormRequestId")
                         .HasColumnType("int")
                         .HasColumnName("FORM_REQUEST_ID");
+
+                    b.Property<string>("Justification")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("JUSTIFICATION");
 
                     b.Property<string>("MissingPunchType")
                         .IsRequired()

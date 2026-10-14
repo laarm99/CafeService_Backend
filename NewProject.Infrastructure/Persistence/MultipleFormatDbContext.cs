@@ -214,6 +214,9 @@ namespace NewProject.Infrastructure.Persistence
                        .HasConversion<string>()
                        .HasMaxLength(50);
 
+                 // Hire date (nullable)
+                 entity.Property(x => x.HireDate);
+
                  entity.HasIndex(x => x.EmployeeNumber)
                  .IsUnique();
 

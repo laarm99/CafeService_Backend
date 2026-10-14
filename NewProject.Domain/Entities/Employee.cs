@@ -39,6 +39,9 @@ namespace MultipleFormat.Domain.Entities
         [Column("PLANT")]
         public PlantType? Plant { get; set; }
 
+        [Column("HIRE_DATE")]
+        public DateTime? HireDate { get; set; }
+
         [Column("IS_ACTIVE")]
         public bool IsActive { get; set; }
     }

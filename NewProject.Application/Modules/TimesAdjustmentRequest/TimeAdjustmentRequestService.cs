@@ -24,7 +24,7 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
 
         public async Task<ServiceResult<int>> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto, int employeeId)
         {
-            var formRequestData = new FormRequest()
+            FormRequest formRequestData = new()
             {
                 EmployeeId = employeeId,
                 FormType = FormType.TimeAdjustment,
@@ -34,13 +34,14 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
                 SubmittedById = employeeId
             };
 
-            var timeAdjustmentRequestData = new TimeAdjustmentRequest()
+            TimeAdjustmentRequest timeAdjustmentRequestData = new()
             {
                 AdjustmentDate = dto.AdjustmentDate,
                 MissingPunchType = dto.MissingPunchType,
                 EntryTime = dto.EntryTime,
                 ExitTime = dto.ExitTime,
-                FormRequest = formRequestData
+                FormRequest = formRequestData,
+                Justification = dto.Justification
             };
 
             _ctx.FormRequests.Add(formRequestData);
@@ -75,7 +76,7 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
                             AdjustmentDate = ta.AdjustmentDate,
                             MissingPunchType = ta.MissingPunchType,
                             EntryTime = ta.EntryTime,
-                            ExitTime = ta.ExitTime
+                            ExitTime = ta.ExitTime,                            
                         };
 
             List<TimeAdjustmentRequestDto> list = await query.ToListAsync(cancellationToken);

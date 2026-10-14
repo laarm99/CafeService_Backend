@@ -34,10 +34,14 @@ namespace MultipleFormat.Application.Modules.EmployeeInfo
                 FullName = employee.FullName,
                 Position = employee.Position,
                 Department = employee.Department,
+                Shift = employee.Shift,
+                Area = employee.Department,
                 SupervisorName = employee.SupervisorName,
-                Plant = employee.Plant.HasValue ? employee.Plant.Value.ToString().Replace('_', ' ') : null
+                Plant = employee.Plant.HasValue ? employee.Plant.Value.ToString().Replace('_', ' ') : null,
+                HireDate = employee.HireDate
             };
 
+            
             return ServiceResult<EmployeeInfoDTO>.Success(dto);
         }
     }

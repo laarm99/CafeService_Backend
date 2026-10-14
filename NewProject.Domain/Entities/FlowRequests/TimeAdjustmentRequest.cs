@@ -27,6 +27,9 @@ namespace MultipleFormat.Domain.Entities.FlowRequests
         [Column("EXIT_TIME")]
         public TimeSpan? ExitTime { get; set; }
 
+        [Column("JUSTIFICATION")]
+        public string Justification { get; set; } = string.Empty;
+
         public virtual FormRequest FormRequest { get; set; } = null!;
     }
 }
