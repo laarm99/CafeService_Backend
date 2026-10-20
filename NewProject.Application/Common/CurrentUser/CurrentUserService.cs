@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using MultipleFormat.Domain.Entities;
 using NewProject.Common.Results;
 using NewProject.Infrastructure.Persistence;
 
@@ -45,23 +46,34 @@ namespace NewProject.Application.Common.CurrentUser
 
             userName = userName.ToUpperInvariant();
 
-            var employee = await _ctx.Set<MultipleFormat.Domain.Entities.Employee>()
+            var employee = await _ctx.Set<Employee>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.DomainUserName == userName && x.IsActive, cancellationToken);
 
-            if (employee == null)
+            var supervisor = await _ctx.Supervisors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.DomainUserName == userName && x.IsActive, cancellationToken);
+
+            if (employee == null && supervisor == null)
             {
                 return ServiceResult<CurrentUserDto>.NotFound("Employee not found or inactive.");
             }
 
+            var account = await _ctx.IDMAccounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.DomainUserName == userName && x.IsActive, cancellationToken);
+
             var dto = new CurrentUserDto
             {
-                Id = employee.Id,
-                EmployeeNumber = employee.EmployeeNumber,
-                DomainUserName = employee.DomainUserName,
-                FullName = employee.FullName,
-                Email = employee.Email,
-                IsActive = employee.IsActive
+                Id = employee?.Id ?? 0,
+                EmployeeNumber = employee?.EmployeeNumber ?? string.Empty,
+                DomainUserName = employee?.DomainUserName ?? supervisor!.DomainUserName!,
+                FullName = employee?.FullName ?? supervisor!.FullName,
+                Email = employee?.Email ?? supervisor!.Email ?? string.Empty,
+                IsActive = employee?.IsActive ?? supervisor!.IsActive,
+                AccountId = account?.Id,
+                SupervisorId = supervisor?.Id,
+                IsSupervisor = supervisor != null
             };
 
             return ServiceResult<CurrentUserDto>.Success(dto);

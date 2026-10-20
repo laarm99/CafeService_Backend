@@ -15,6 +15,12 @@ namespace MultipleFormat.Domain.Entities.FlowRequests
         [Column("EMPLOYEE_ID")]
         public int EmployeeId { get; set; }
 
+        [Column("CREATED_BY_ID")]
+        public int? CreatedById { get; set; }
+
+        [Column("APPROVER_ID")]
+        public int? ApproverId { get; set; }
+
         [Column("FORM_TYPE")]
         public FormType FormType { get; set; }
 

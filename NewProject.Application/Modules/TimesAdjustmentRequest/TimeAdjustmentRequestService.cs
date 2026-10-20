@@ -1,32 +1,31 @@
 ﻿using MultipleFormat.Application.Modules.TimesAdjustmentRequest.DTOs;
+using MultipleFormat.Application.Modules.FormRequests;
 using MultipleFormat.Domain.Common.Enums;
 using MultipleFormat.Domain.Entities.FlowRequests;
 using NewProject.Common.Results;
 using NewProject.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
 {    
     public class TimeAdjustmentRequestService
     {
         private readonly MultipleFormatDbContext _ctx;
+        private readonly FormRequestApprovalService _approvalService;
 
-        public TimeAdjustmentRequestService(MultipleFormatDbContext ctx)
+        public TimeAdjustmentRequestService(MultipleFormatDbContext ctx, FormRequestApprovalService approvalService)
         {
             _ctx = ctx;
+            _approvalService = approvalService;
         }
 
-        public async Task<ServiceResult<int>> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto, int employeeId)
+        public async Task<ServiceResult<int>> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto, int employeeId, int createdById, CancellationToken cancellationToken = default)
         {
             FormRequest formRequestData = new()
             {
                 EmployeeId = employeeId,
+                CreatedById = createdById,
+                ApproverId = await _approvalService.ResolveApproverIdAsync(employeeId, cancellationToken),
                 FormType = FormType.TimeAdjustment,
                 Status = RequestStatus.Submitted,
                 CreatedDate = DateTime.UtcNow,
@@ -49,7 +48,7 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
 
             try
             {
-                await _ctx.SaveChangesAsync();
+                await _ctx.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException)
             {
@@ -69,10 +68,10 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
                         {
                             FormRequestId = fr.Id,
                             FormType = fr.FormType,
-                            Status = (int)fr.Status,
+                            Status = fr.Status,
                             CreatedDate = fr.CreatedDate,
                             SubmittedDate = fr.SubmittedDate,
-                            Comments = fr.Comments,
+                            Comments = ta.Justification,
                             AdjustmentDate = ta.AdjustmentDate,
                             MissingPunchType = ta.MissingPunchType,
                             EntryTime = ta.EntryTime,

@@ -36,6 +36,11 @@ namespace MultipleFormat.Domain.Entities
         [Column("SUPERVISOR_NAME")]
         public string? SupervisorName { get; set; }
 
+        [Column("ID_SUPERVISOR")]
+        public int? SupervisorId { get; set; }
+
+        public Supervisor? Supervisor { get; set; }
+
         [Column("PLANT")]
         public PlantType? Plant { get; set; }
 

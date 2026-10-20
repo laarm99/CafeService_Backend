@@ -6,6 +6,8 @@ using MultipleFormat.Application.Modules.TimesAdjustmentRequest;
 using MultipleFormat.Application.Modules.VacationsRequest;
 using NewProject.Application.Common.CurrentUser;
 using NewProject.Application.Modules.Dashboard;
+using MultipleFormat.Application.Modules.FormRequests;
+using MultipleFormat.Application.Modules.Supervisors;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -24,6 +26,9 @@ namespace NewProject.Application
             services.AddScoped<ChangesDepOrShiftRequestService>();
             services.AddScoped<TimeAdjustmentRequestService>();           
             services.AddScoped<EmployeeInfoService>();
+            services.AddScoped<FormRequestService>();
+            services.AddScoped<FormRequestApprovalService>();
+            services.AddScoped<SupervisorService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;

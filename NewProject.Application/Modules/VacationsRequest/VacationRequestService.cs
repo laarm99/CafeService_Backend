@@ -1,4 +1,5 @@
 ﻿using MultipleFormat.Application.Modules.VacationsRequest.DTOs;
+using MultipleFormat.Application.Modules.FormRequests;
 using MultipleFormat.Domain.Common.Enums;
 using MultipleFormat.Domain.Entities.FlowRequests;
 using NewProject.Common.Results;
@@ -13,13 +14,15 @@ namespace MultipleFormat.Application.Modules.VacationsRequest
     public class VacationRequestService
     {
         private readonly MultipleFormatDbContext _ctx;
+        private readonly FormRequestApprovalService _approvalService;
 
-        public VacationRequestService(MultipleFormatDbContext ctx)
+        public VacationRequestService(MultipleFormatDbContext ctx, FormRequestApprovalService approvalService)
         {
             _ctx = ctx;
+            _approvalService = approvalService;
         }
 
-        public async Task<ServiceResult<int>> CreateVacationRequest(VacationCreateRequestDTO dto, int employeeId)
+        public async Task<ServiceResult<int>> CreateVacationRequest(VacationCreateRequestDTO dto, int employeeId, int createdById, CancellationToken cancellationToken = default)
         {
             // Basic validations
             if (dto.StartDate > dto.EndDate)
@@ -40,6 +43,8 @@ namespace MultipleFormat.Application.Modules.VacationsRequest
             var formRequestData = new FormRequest()
             {
                 EmployeeId = employeeId,
+                CreatedById = createdById,
+                ApproverId = await _approvalService.ResolveApproverIdAsync(employeeId, cancellationToken),
                 FormType = FormType.Vacation,
                 Status = RequestStatus.Submitted,
                 CreatedDate = DateTime.UtcNow,
@@ -61,7 +66,7 @@ namespace MultipleFormat.Application.Modules.VacationsRequest
 
             try
             {
-                await _ctx.SaveChangesAsync();
+                await _ctx.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException ex)
             {

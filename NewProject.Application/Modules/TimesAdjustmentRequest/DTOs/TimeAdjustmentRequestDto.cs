@@ -7,7 +7,7 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest.DTOs
     {
         public int FormRequestId { get; set; }
         public FormType FormType { get; set; }
-        public int Status { get; set; }
+        public RequestStatus Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? SubmittedDate { get; set; }
         public string? Comments { get; set; }

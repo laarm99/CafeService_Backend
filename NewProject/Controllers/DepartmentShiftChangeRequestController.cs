@@ -24,7 +24,13 @@ namespace NewProject.Controllers
         [HttpPost("create-change-request")]
         public async Task<IActionResult> CreateChangeRequest(ChangesDepOrShiftCreateRequestDTO dto)
         {
-            var result = await _changesDepOrShiftRequestService.CreateChangesDepOrShiftRequests(dto);
+            var currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, HttpContext.RequestAborted);
+            if (!currentUserResult.IsSuccess || currentUserResult.Data?.AccountId is not int createdById)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "La cuenta del usuario no está configurada." });
+            }
+
+            var result = await _changesDepOrShiftRequestService.CreateChangesDepOrShiftRequests(dto, createdById);
 
             if (!result.IsSuccess)
             {

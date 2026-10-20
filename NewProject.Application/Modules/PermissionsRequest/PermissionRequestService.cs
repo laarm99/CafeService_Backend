@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using MultipleFormat.Application.Modules.PermissionsRequest.DTOs;
+using MultipleFormat.Application.Modules.FormRequests;
 using MultipleFormat.Application.Modules.VacationsRequest.DTOs;
 using MultipleFormat.Domain.Common.Enums;
 using MultipleFormat.Domain.Entities.FlowRequests;
@@ -12,13 +13,15 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
     public class PermissionRequestService
     {
         private readonly MultipleFormatDbContext _ctx;
+        private readonly FormRequestApprovalService _approvalService;
 
-        public PermissionRequestService(MultipleFormatDbContext ctx)
+        public PermissionRequestService(MultipleFormatDbContext ctx, FormRequestApprovalService approvalService)
         {
             _ctx = ctx;
+            _approvalService = approvalService;
         }
 
-        public async Task<ServiceResult<int>> CreatePermissionRequest(PermissionCreateRequestDTO dto)
+        public async Task<ServiceResult<int>> CreatePermissionRequest(PermissionCreateRequestDTO dto, int createdById, CancellationToken cancellationToken = default)
         {
             // Validate attachments for types that require comprobantes (Marriage, Birth, Death)
             if ((dto.PermissionType == PermissionType.Marriage || dto.PermissionType == PermissionType.Birth || dto.PermissionType == PermissionType.Death)
@@ -30,6 +33,8 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
             FormRequest formRequestData = new()
             {
                 EmployeeId = dto.EmployeeId,
+                CreatedById = createdById,
+                ApproverId = await _approvalService.ResolveApproverIdAsync(dto.EmployeeId, cancellationToken),
                 FormType = FormType.Permission,
                 Status = RequestStatus.Submitted,
                 CreatedDate = DateTime.UtcNow,
@@ -38,7 +43,7 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
 
             _ctx.FormRequests.Add(formRequestData);
 
-            await _ctx.SaveChangesAsync();
+            await _ctx.SaveChangesAsync(cancellationToken);
 
 
             PermissionRequest permissionRequestData = new()
@@ -54,7 +59,7 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
 
             _ctx.PermissionRequests.Add(permissionRequestData);
 
-            await _ctx.SaveChangesAsync();
+            await _ctx.SaveChangesAsync(cancellationToken);
 
             // Note: file saving for Attachments is not implemented here. Save files to storage and persist references in a separate table.
 

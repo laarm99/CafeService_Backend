@@ -34,8 +34,12 @@ namespace MultipleFormat.Web.Controllers
             }
 
             CurrentUserDto employee = currentUserResult.Data!;
+            if (employee.AccountId is not int createdById)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "La cuenta del usuario no está configurada." });
+            }
 
-            ServiceResult<int> result = await _vacationRequestService.CreateVacationRequest(dto, employee.Id);
+            ServiceResult<int> result = await _vacationRequestService.CreateVacationRequest(dto, employee.Id, createdById);
 
             if (!result.IsSuccess)
             {

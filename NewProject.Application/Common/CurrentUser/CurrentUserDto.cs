@@ -10,5 +10,8 @@ namespace NewProject.Application.Common.CurrentUser
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public int? AccountId { get; set; }
+        public int? SupervisorId { get; set; }
+        public bool IsSupervisor { get; set; }
     }
 }

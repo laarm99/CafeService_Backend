@@ -22,7 +22,13 @@ namespace MultipleFormat.Web.Controllers
         [HttpPost("create-permission-request")]
         public async Task<IActionResult> CreatePermissionRequest([FromBody] PermissionCreateRequestDTO dto)
         {
-            var result = await _permissionRequestService.CreatePermissionRequest(dto);
+            var currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, HttpContext.RequestAborted);
+            if (!currentUserResult.IsSuccess || currentUserResult.Data?.AccountId is not int createdById)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "La cuenta del usuario no está configurada." });
+            }
+
+            var result = await _permissionRequestService.CreatePermissionRequest(dto, createdById);
             if (!result.IsSuccess)
             {
                 return BadRequest(result);

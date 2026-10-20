@@ -86,6 +86,10 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("SHIFT");
 
+                    b.Property<int?>("SupervisorId")
+                        .HasColumnType("int")
+                        .HasColumnName("ID_SUPERVISOR");
+
                     b.Property<string>("SupervisorName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -98,6 +102,8 @@ namespace NewProject.Infrastructure.Migrations
 
                     b.HasIndex("EmployeeNumber")
                         .IsUnique();
+
+                    b.HasIndex("SupervisorId");
 
                     b.ToTable("MFR_EMPLOYEES");
                 });
@@ -179,10 +185,18 @@ namespace NewProject.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ApproverId")
+                        .HasColumnType("int")
+                        .HasColumnName("APPROVER_ID");
+
                     b.Property<string>("Comments")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)")
                         .HasColumnName("COMMENTS");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int")
+                        .HasColumnName("CREATED_BY_ID");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2")
@@ -212,6 +226,10 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnName("SUBMITTED_DATE");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("CreatedById");
 
                     b.HasIndex("EmployeeId");
 
@@ -342,6 +360,57 @@ namespace NewProject.Infrastructure.Migrations
                     b.ToTable("MFR_VACATION_REQUEST");
                 });
 
+            modelBuilder.Entity("MultipleFormat.Domain.Entities.Supervisor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATED_DATE");
+
+                    b.Property<string>("DomainUserName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("DOMAIN_USER_NAME");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("FULL_NAME");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("IS_ACTIVE");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("NORMALIZED_NAME");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainUserName")
+                        .IsUnique()
+                        .HasFilter("[DOMAIN_USER_NAME] IS NOT NULL");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("MFR_SUPERVISORS");
+                });
+
             modelBuilder.Entity("NewProject.Domain.Entities.IDM.IDMAccount", b =>
                 {
                     b.Property<int>("Id")
@@ -429,6 +498,16 @@ namespace NewProject.Infrastructure.Migrations
                     b.ToTable("IDM_ROLE");
                 });
 
+            modelBuilder.Entity("MultipleFormat.Domain.Entities.Employee", b =>
+                {
+                    b.HasOne("MultipleFormat.Domain.Entities.Supervisor", "Supervisor")
+                        .WithMany()
+                        .HasForeignKey("SupervisorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Supervisor");
+                });
+
             modelBuilder.Entity("MultipleFormat.Domain.Entities.FlowRequests.DepartmentShiftChangeRequest", b =>
                 {
                     b.HasOne("MultipleFormat.Domain.Entities.FlowRequests.FormRequest", "FormRequest")
@@ -442,6 +521,16 @@ namespace NewProject.Infrastructure.Migrations
 
             modelBuilder.Entity("MultipleFormat.Domain.Entities.FlowRequests.FormRequest", b =>
                 {
+                    b.HasOne("NewProject.Domain.Entities.IDM.IDMAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("NewProject.Domain.Entities.IDM.IDMAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("MultipleFormat.Domain.Entities.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")

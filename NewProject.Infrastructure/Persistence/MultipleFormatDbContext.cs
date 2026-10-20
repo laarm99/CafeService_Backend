@@ -24,6 +24,7 @@ namespace NewProject.Infrastructure.Persistence
         public DbSet<TimeAdjustmentRequest> TimeAdjustmentRequests { get; set; }
         public DbSet<DepartmentShiftChangeRequest> DepartmentShiftChangeRequests { get; set; }
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<Supervisor> Supervisors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -97,6 +98,26 @@ namespace NewProject.Infrastructure.Persistence
                 entity.Property(x => x.EmployeeId)
                       .IsRequired()
                       .HasMaxLength(50);
+
+                entity.Property(x => x.CreatedById)
+                      .HasColumnName("CREATED_BY_ID");
+
+                entity.HasOne<NewProject.Domain.Entities.IDM.IDMAccount>()
+                      .WithMany()
+                      .HasForeignKey(x => x.CreatedById)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(x => x.CreatedById);
+
+                entity.Property(x => x.ApproverId)
+                      .HasColumnName("APPROVER_ID");
+
+                entity.HasOne<NewProject.Domain.Entities.IDM.IDMAccount>()
+                      .WithMany()
+                      .HasForeignKey(x => x.ApproverId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(x => x.ApproverId);
 
                 entity.Property(x => x.FormType)
                       .HasConversion<string>()
@@ -209,6 +230,16 @@ namespace NewProject.Infrastructure.Persistence
                  entity.Property(x => x.SupervisorName)
                        .HasMaxLength(200);
 
+                  entity.Property(x => x.SupervisorId)
+                        .HasColumnName("ID_SUPERVISOR");
+
+                  entity.HasOne(x => x.Supervisor)
+                        .WithMany()
+                        .HasForeignKey(x => x.SupervisorId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                  entity.HasIndex(x => x.SupervisorId);
+
                  // Plant stored as string in DB (nullable)
                  entity.Property(x => x.Plant)
                        .HasConversion<string>()
@@ -222,6 +253,41 @@ namespace NewProject.Infrastructure.Persistence
 
                  entity.HasIndex(x => x.DomainUserName)
                  .IsUnique();
+             });
+
+             modelBuilder.Entity<Supervisor>(entity =>
+             {
+                 entity.HasKey(x => x.Id);
+
+                 entity.Property(x => x.Id)
+                       .ValueGeneratedOnAdd();
+
+                 entity.Property(x => x.FullName)
+                       .IsRequired()
+                       .HasMaxLength(200);
+
+                 entity.Property(x => x.NormalizedName)
+                       .IsRequired()
+                       .HasMaxLength(200);
+
+                 entity.Property(x => x.DomainUserName)
+                       .HasMaxLength(50);
+
+                 entity.Property(x => x.Email)
+                       .HasMaxLength(200);
+
+                 entity.Property(x => x.IsActive)
+                       .IsRequired();
+
+                 entity.Property(x => x.CreatedDate)
+                       .IsRequired();
+
+                 entity.HasIndex(x => x.NormalizedName)
+                       .IsUnique();
+
+                 entity.HasIndex(x => x.DomainUserName)
+                       .IsUnique()
+                       .HasFilter("[DOMAIN_USER_NAME] IS NOT NULL");
              });
 
             base.OnModelCreating(modelBuilder);
