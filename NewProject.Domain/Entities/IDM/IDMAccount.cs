@@ -10,20 +10,26 @@ namespace NewProject.Domain.Entities.IDM
     {
         [Column("ID")]
         public int Id { get; set; }
-        
+
         [Column("DOMAIN_USER_NAME")]
         public string DomainUserName { get; set; }
-        
+
         [Column("FULL_NAME")]
         public string FullName { get; set; }
-        
+
         [Column("EMAIL")]
         public string Email { get; set; }
-        
+
         [Column("IS_ACTIVE")]
         public bool IsActive { get; set; }
 
         [Column("CREATED_DATE")]
         public DateTime CreatedDate { get; set; }
+
+        [Column("UPDATED_DATE")]
+        public DateTime? UpdatedDate { get; set; }
+
+        [Column("UPDATED_BY")]
+        public int? UpdatedBy { get; set; }
     }
 }

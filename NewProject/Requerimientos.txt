@@ -1,0 +1,306 @@
+Necesito implementar nuevos módulos y reglas de autorización en el backend existente del proyecto.
+
+Antes de generar o modificar código, analiza completamente la solución actual.
+
+IMPORTANTE:
+- No asumas la arquitectura.
+- No crees una nueva arquitectura.
+- No dupliques entidades, DTOs, servicios, repositorios, DbContexts, enums o configuraciones existentes.
+- Respeta los nombres, patrones y convenciones actuales.
+- Trabaja sobre la implementación real encontrada en el proyecto.
+- Si una entidad o propiedad equivalente ya existe, reutilízala.
+- No implementes todavía el sistema de correos.
+- No elimines funcionalidad existente.
+
+Primero analiza e identifica:
+
+1. Los proyectos y capas que forman la solución.
+2. Las entidades relacionadas con:
+   - usuarios;
+   - empleados;
+   - supervisores;
+   - roles;
+   - solicitudes o FormRequest;
+   - tipos de formato;
+   - estatus;
+   - relación supervisor-empleado.
+3. El DbContext existente.
+4. Las configuraciones de Entity Framework Core.
+5. Los DTOs, servicios, interfaces y controladores existentes.
+6. El sistema actual de autenticación y autorización.
+7. La forma en que se identifica al usuario autenticado.
+8. Si DomainUserName, NetKey, EmployeeNumber o algún campo similar se usa para relacionar al usuario con el empleado.
+9. Los enums actuales para roles, estatus y tipos de formato.
+10. La manera en que se registran servicios en inyección de dependencias.
+11. Las migraciones existentes y el proyecto donde se crean.
+12. Si existe borrado lógico, campo IsActive, IsEnabled, DisabledAt o equivalente.
+
+Después del análisis, presenta un plan de implementación por fases. No escribas código hasta mostrar:
+
+- archivos que se deben modificar;
+- archivos nuevos estrictamente necesarios;
+- entidades y relaciones reutilizadas;
+- cambios de base de datos;
+- endpoints necesarios;
+- reglas de autorización;
+- riesgos de compatibilidad con lo existente.
+
+REQUERIMIENTOS FUNCIONALES
+
+1. MÓDULO DE CONFIGURACIÓN
+
+Se necesita un nuevo módulo administrativo llamado Configuración.
+
+Dentro de Configuración existirán dos secciones independientes:
+
+A. Supervisores
+B. Usuarios
+
+Aunque se presentan dentro de Configuración, deben manejarse como funcionalidades separadas en el backend, utilizando servicios, DTOs y endpoints independientes cuando corresponda.
+
+2. ADMINISTRACIÓN DE SUPERVISORES
+
+El módulo de Supervisores debe permitir:
+
+- Obtener la lista de supervisores.
+- Buscar o filtrar supervisores, si la arquitectura actual lo permite.
+- Consultar el detalle de un supervisor.
+- Editar el NetKey del supervisor.
+- Editar el correo electrónico.
+- Habilitar o deshabilitar al supervisor.
+- No eliminar físicamente registros.
+- Conservar las relaciones existentes con empleados y solicitudes.
+- Validar que NetKey y correo no generen duplicados.
+- Validar el formato del correo.
+- Registrar los cambios con los campos de auditoría existentes, si el proyecto ya cuenta con ellos.
+
+Antes de agregar campos nuevos, revisa si NetKey corresponde actualmente a:
+- DomainUserName;
+- UserName;
+- NetworkId;
+- Login;
+- EmployeeNumber;
+- otro campo equivalente.
+
+No crees dos propiedades para representar el mismo dato.
+
+3. ADMINISTRACIÓN DE USUARIOS
+
+El módulo de Usuarios debe permitir:
+
+- Obtener la lista de usuarios.
+- Consultar el detalle de un usuario.
+- Asignar o cambiar el rol del usuario.
+- Habilitar o deshabilitar al usuario.
+- No eliminar físicamente usuarios.
+- Evitar que se asignen roles inexistentes.
+- Reutilizar el catálogo, tabla o enum de roles existente.
+- Evitar duplicar la relación usuario-rol si actualmente existe una tabla como IDM_ACCOUNT_ROLE o equivalente.
+- Mantener separado el usuario de autenticación y el registro de empleado cuando la arquitectura actual haga esa distinción.
+
+Los roles iniciales requeridos son:
+
+- Admin
+- Supervisor
+- General
+
+Si los roles ya existen con nombres diferentes, presenta primero la equivalencia y no agregues duplicados automáticamente.
+
+4. SEGURIDAD Y AUTORIZACIÓN
+
+La autorización debe aplicarse en el backend. No debe depender únicamente de que el frontend oculte opciones.
+
+Reglas:
+
+ADMIN
+- Puede consultar todos los formatos.
+- Puede acceder a los endpoints de Configuración.
+- Puede consultar y modificar Supervisores.
+- Puede consultar y modificar Usuarios.
+- Puede asignar roles.
+- Puede habilitar o deshabilitar supervisores y usuarios.
+- No puede aprobar ni rechazar solicitudes.
+
+SUPERVISOR
+- Puede consultar exclusivamente las solicitudes de empleados que tiene asignados como personal a cargo.
+- Puede aprobar o rechazar exclusivamente las solicitudes de empleados a su cargo.
+- No puede aprobar solicitudes de empleados que no estén relacionados con él.
+- No puede acceder a Configuración.
+- Por ahora, puede consultar y gestionar solicitudes de Cambio de departamento y/o turno.
+- La autorización para ajuste de tiempos, vacaciones y permisos queda pendiente, por lo que no debe agregarse sin una regla explícita posterior.
+
+GENERAL
+- Puede crear solicitudes de vacaciones.
+- Puede crear solicitudes de permisos.
+- Puede crear solicitudes de ajuste de checadas.
+- No puede acceder a Configuración.
+- No puede aprobar o rechazar solicitudes.
+- Debe consultar únicamente sus propias solicitudes, a menos que el comportamiento existente defina una regla más restrictiva.
+
+IMPORTANTE:
+Para aprobar o rechazar una solicitud, el backend debe validar simultáneamente:
+
+1. Que el usuario autenticado tenga rol Supervisor.
+2. Que el supervisor esté activo.
+3. Que la solicitud corresponda a un empleado a su cargo.
+4. Que la solicitud se encuentre en un estatus que permita aprobación o rechazo.
+5. Que el usuario no esté intentando aprobar su propia solicitud, salvo que ya exista una regla de negocio explícita que lo permita.
+
+El rol Admin no debe obtener permiso de aprobación por tener acceso general al sistema.
+
+5. FILTROS PARA LA LISTA DE FORMATOS
+
+Extiende el endpoint existente de Lista de Formatos. No crees un endpoint duplicado si ya existe uno que pueda ampliarse.
+
+Debe aceptar filtros opcionales:
+
+- Tipo de formato.
+- Estatus.
+- Fecha inicial.
+- Fecha final.
+- Texto de búsqueda.
+
+El texto de búsqueda debe permitir buscar por:
+
+- ID del formato;
+- nombre del empleado;
+- número de empleado.
+
+Reglas de filtrado:
+
+- Todos los filtros son opcionales.
+- Los filtros deben poder combinarse.
+- Si no se envían filtros, se conserva el comportamiento actual.
+- La búsqueda textual debe ignorar diferencias entre mayúsculas y minúsculas cuando el proveedor de base de datos lo permita.
+- No cargar todos los registros a memoria para después filtrarlos.
+- Construir la consulta como IQueryable y ejecutar filtros en la base de datos.
+- Mantener o implementar paginación.
+- Mantener ordenamiento, preferentemente por fecha de creación descendente, si no existe otro ordenamiento definido.
+- Validar rangos de fecha inválidos.
+- Evitar consultas N+1.
+- Proyectar resultados al DTO correspondiente.
+
+Además de los filtros, el endpoint debe respetar el alcance por rol:
+
+- Admin: todos los registros.
+- Supervisor: registros de empleados a su cargo.
+- General: registros propios.
+
+6. ENDPOINTS ESPERADOS
+
+Adapta las rutas a las convenciones existentes. Como referencia funcional, se requieren operaciones equivalentes a:
+
+Configuración de supervisores:
+- GET supervisores
+- GET supervisor por identificador
+- PUT/PATCH supervisor
+- PATCH habilitar o deshabilitar supervisor
+
+Configuración de usuarios:
+- GET usuarios
+- GET usuario por identificador
+- PUT/PATCH rol del usuario
+- PATCH habilitar o deshabilitar usuario
+
+Lista de formatos:
+- GET formatos con paginación, filtros y alcance por rol
+
+Aprobaciones:
+- POST o PATCH para aprobar
+- POST o PATCH para rechazar
+
+No crees rutas nuevas si estas operaciones ya existen. En ese caso, amplía las rutas actuales.
+
+7. BASE DE DATOS
+
+Determina cuáles cambios requieren una migración.
+
+Antes de crearla:
+
+- Revisa si las propiedades necesarias ya existen.
+- Revisa si ya existe una relación entre supervisor y empleado.
+- Revisa si ya existe una tabla de usuarios y roles.
+- Revisa si existe un indicador de activo/inactivo.
+- Revisa índices y restricciones únicas.
+
+Si son necesarios, propone índices para:
+
+- NetKey o nombre de dominio;
+- correo electrónico;
+- número de empleado;
+- rol;
+- estatus;
+- tipo de formato;
+- fecha de creación;
+- relación supervisor-empleado.
+
+No generes una migración destructiva.
+No elimines o renombres columnas sin explicar el impacto y la estrategia de migración de datos.
+
+8. RESPUESTAS Y ERRORES
+
+Reutiliza el formato actual de respuestas del API.
+
+Como mínimo, contempla:
+
+- 400 para solicitudes inválidas;
+- 401 para usuario no autenticado;
+- 403 cuando el rol no tiene permiso o el empleado no pertenece al supervisor;
+- 404 cuando no existe el recurso;
+- 409 para conflictos de NetKey, correo o asignaciones duplicadas.
+
+No reveles información sensible en los mensajes de error.
+
+9. PRUEBAS
+
+Incluye pruebas para:
+
+- Admin accediendo a Configuración.
+- Supervisor intentando acceder a Configuración.
+- General intentando acceder a Configuración.
+- Admin intentando aprobar una solicitud.
+- Supervisor aprobando una solicitud de un empleado a su cargo.
+- Supervisor intentando aprobar una solicitud ajena.
+- Usuario deshabilitado intentando utilizar operaciones protegidas.
+- Cambio de rol.
+- NetKey duplicado.
+- Correo inválido.
+- Filtros individuales.
+- Combinación de filtros.
+- Rango de fechas inválido.
+- Paginación.
+- Alcance de resultados por cada rol.
+
+10. FORMATO DE ENTREGA
+
+Después del análisis y del plan, implementa los cambios por etapas.
+
+Para cada cambio muestra:
+
+1. Proyecto o capa.
+2. Ruta exacta del archivo.
+3. Si el archivo es nuevo o existente.
+4. Motivo del cambio.
+5. Código completo o bloque exacto que debe reemplazarse.
+6. Dependencias afectadas.
+7. Comando de migración, solamente si se requiere.
+8. Forma de probar el endpoint.
+9. Resultado esperado.
+
+No uses pseudocódigo.
+No omitas métodos necesarios.
+No dejes marcadores como TODO.
+No modifiques archivos que no sean necesarios.
+Usa codigo simple si es possible separar en funciones pequeñas una consulta para un codigo limpio
+
+--NUEVA SECCION
+Análisis y plan
+Rutas y autenticación: la aplicación activa declara sus rutas en main.jsx. ProtectedRouteComponent.jsx solo comprueba que exista una sesión. AuthProvider.jsx valida la sesión con auth/login, pero ese endpoint no devuelve el rol. Sin ese dato no se pueden aplicar de forma fiable las reglas de Admin, Supervisor y General ni proteger las rutas administrativas.
+Menú y página principal: modules.js es la fuente compartida por el menú lateral y los accesos del inicio. La reutilizaré para agregar Configuración y sus opciones, conservando Lista y Nuevo Formato Múltiple.
+Lista de formatos: MultiFormatGrid.jsx usa useMultiFormatData.jsx y DefaultTable. El backend permite filtrar por FormType, Status, StartDate, EndDate y Search, pero todavía no admite paginación. No implementaré paginación local como sustituto de la paginación de servidor que pide el documento.
+Servicios y UI: reutilizaré backend-requests.js, las tablas y formularios de Ant Design, y los mecanismos actuales de errores y notificaciones. El proyecto es JavaScript y no tiene interfaces TypeScript ni un patrón de páginas administrativas establecido; evitaré una migración amplia.
+Aprobaciones: el backend limita aprobar/rechazar a supervisores y a solicitudes válidas. La UI ocultará esas acciones según los permisos una vez que el rol esté disponible; la autorización del backend seguirá siendo obligatoria.
+Cambios requeridos en el contrato del backend
+GET /api/auth/login: incluir el rol real de la sesión, usando los valores exactos Admin, Supervisor o GeneralUser. No usar datos guardados en el navegador como fuente de autorización.
+GET /api/form-requests: aceptar page y pageSize, además de los filtros existentes, y devolver metadatos de paginación —por ejemplo, totalCount, page, pageSize y totalPages— junto con los registros.
+Supervisores y usuarios: los endpoints documentados son suficientes para sus operaciones principales. El número de empleado se mostrará solo si el backend lo proporciona; el contrato actual no lo incluye para supervisores.

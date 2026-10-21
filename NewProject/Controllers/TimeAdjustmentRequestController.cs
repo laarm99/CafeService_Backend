@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using MultipleFormat.Application.Modules.TimesAdjustmentRequest;
 using MultipleFormat.Application.Modules.TimesAdjustmentRequest.DTOs;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 namespace MultipleFormat.Web.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/time-adjustment-request")]
     public class TimeAdjustmentRequestController : ControllerBase
     {

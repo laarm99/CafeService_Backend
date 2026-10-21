@@ -26,5 +26,11 @@ namespace MultipleFormat.Domain.Entities
 
         [Column("CREATED_DATE")]
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        [Column("UPDATED_DATE")]
+        public DateTime? UpdatedDate { get; set; }
+
+        [Column("UPDATED_BY")]
+        public int? UpdatedBy { get; set; }
     }
 }

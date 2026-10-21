@@ -1,0 +1,231 @@
+using Microsoft.EntityFrameworkCore;
+using NewProject.Application.Modules.Users.DTOs;
+using NewProject.Common.Results;
+using NewProject.Infrastructure.Persistence;
+using NewProject.Domain.Entities.IDM;
+using MultipleFormat.Application.Modules.Supervisors;
+
+namespace NewProject.Application.Modules.Users
+{
+    public class UserService
+    {
+        private readonly MultipleFormatDbContext _ctx;
+
+        public UserService(MultipleFormatDbContext ctx)
+        {
+            _ctx = ctx;
+        }
+
+        public async Task<ServiceResult<List<UserDto>>> GetAsync(
+            bool includeInactive = true,
+            CancellationToken cancellationToken = default)
+        {
+            var accounts = await _ctx.IDMAccounts
+                .AsNoTracking()
+                .Where(x => includeInactive || x.IsActive)
+                .OrderBy(x => x.FullName)
+                .ToListAsync(cancellationToken);
+
+            var userDtos = new List<UserDto>();
+
+            foreach (var account in accounts)
+            {
+                var roles = await _ctx.IDMAccountRoles
+                    .AsNoTracking()
+                    .Where(x => x.AccountId == account.Id)
+                    .Join(
+                        _ctx.IDMRoles.AsNoTracking(),
+                        ar => ar.RoleId,
+                        r => r.Id,
+                        (ar, r) => r.RoleName)
+                    .ToListAsync(cancellationToken);
+
+                userDtos.Add(new UserDto
+                {
+                    Id = account.Id,
+                    DomainUserName = account.DomainUserName,
+                    FullName = account.FullName,
+                    Email = account.Email,
+                    IsActive = account.IsActive,
+                    Roles = roles,
+                    CreatedDate = account.CreatedDate
+                });
+            }
+
+            return ServiceResult<List<UserDto>>.Success(userDtos);
+        }
+
+        public async Task<ServiceResult<UserDto>> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            var account = await _ctx.IDMAccounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (account == null)
+            {
+                return ServiceResult<UserDto>.NotFound("Usuario no encontrado.");
+            }
+
+            var roles = await _ctx.IDMAccountRoles
+                .AsNoTracking()
+                .Where(x => x.AccountId == id)
+                .Join(
+                    _ctx.IDMRoles.AsNoTracking(),
+                    ar => ar.RoleId,
+                    r => r.Id,
+                    (ar, r) => r.RoleName)
+                .ToListAsync(cancellationToken);
+
+            var userDto = new UserDto
+            {
+                Id = account.Id,
+                DomainUserName = account.DomainUserName,
+                FullName = account.FullName,
+                Email = account.Email,
+                IsActive = account.IsActive,
+                Roles = roles,
+                CreatedDate = account.CreatedDate
+            };
+
+            return ServiceResult<UserDto>.Success(userDto);
+        }
+
+        public async Task<ServiceResult<UserDto>> UpdateAsync(
+            int id,
+            UpdateUserRequest request,
+            int? currentUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var roleName = request.Role.Trim();
+            var role = await _ctx.IDMRoles
+                .FirstOrDefaultAsync(x => x.IsActive && x.RoleName == roleName, cancellationToken);
+            if (role == null)
+            {
+                return ServiceResult<UserDto>.BadRequest("El rol indicado no existe o está inactivo.");
+            }
+
+            var account = await _ctx.IDMAccounts
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (account == null)
+            {
+                return ServiceResult<UserDto>.NotFound("Usuario no encontrado.");
+            }
+
+            var accountRoles = await _ctx.IDMAccountRoles
+                .Where(x => x.AccountId == id)
+                .ToListAsync(cancellationToken);
+            _ctx.IDMAccountRoles.RemoveRange(accountRoles);
+            _ctx.IDMAccountRoles.Add(new IDMAccountRole
+            {
+                AccountId = id,
+                RoleId = role.Id
+            });
+
+            account.UpdatedDate = DateTime.UtcNow;
+            account.UpdatedBy = currentUserId;
+
+            await _ctx.SaveChangesAsync(cancellationToken);
+            return await GetByIdAsync(id, cancellationToken);
+        }
+
+        public async Task<ServiceResult<UserDto>> UpdateRolesAsync(
+            int id,
+            UpdateUserRolesRequest request,
+            int? currentUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            // Validar que la lista no esté vacía
+            if (request.Roles == null || request.Roles.Count == 0)
+            {
+                return ServiceResult<UserDto>.BadRequest("El usuario debe tener al menos un rol.");
+            }
+
+            // Validar que todos los roles existan y estén activos
+            var roleNames = request.Roles.Select(r => r.Trim()).Distinct().ToList();
+            var roles = await _ctx.IDMRoles
+                .Where(x => x.IsActive && roleNames.Contains(x.RoleName))
+                .ToListAsync(cancellationToken);
+
+            if (roles.Count != roleNames.Count)
+            {
+                return ServiceResult<UserDto>.BadRequest("Uno o más roles indicados no existen o están inactivos.");
+            }
+
+            // Validar regla: No se puede mezclar "Admin" con "GeneralUser"
+            if (roleNames.Contains("Admin") && roleNames.Contains("GeneralUser"))
+            {
+                return ServiceResult<UserDto>.BadRequest("No se puede asignar simultáneamente los roles Admin y GeneralUser.");
+            }
+
+            // Verificar que la cuenta existe
+            var account = await _ctx.IDMAccounts
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (account == null)
+            {
+                return ServiceResult<UserDto>.NotFound("Usuario no encontrado.");
+            }
+
+            // Reemplazar todas las relaciones de roles
+            var existingAccountRoles = await _ctx.IDMAccountRoles
+                .Where(x => x.AccountId == id)
+                .ToListAsync(cancellationToken);
+            _ctx.IDMAccountRoles.RemoveRange(existingAccountRoles);
+
+            foreach (var role in roles)
+            {
+                _ctx.IDMAccountRoles.Add(new IDMAccountRole
+                {
+                    AccountId = id,
+                    RoleId = role.Id
+                });
+            }
+
+            account.UpdatedDate = DateTime.UtcNow;
+            account.UpdatedBy = currentUserId;
+
+            await _ctx.SaveChangesAsync(cancellationToken);
+            return await GetByIdAsync(id, cancellationToken);
+        }
+
+        public Task<bool> IsAdministratorAsync(
+            string? domainUserName,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedUserName = SupervisorService.NormalizeDomainUserName(domainUserName);
+            return (from account in _ctx.IDMAccounts.AsNoTracking()
+                    join accountRole in _ctx.IDMAccountRoles.AsNoTracking()
+                        on account.Id equals accountRole.AccountId
+                    join role in _ctx.IDMRoles.AsNoTracking()
+                        on accountRole.RoleId equals role.Id
+                    where account.IsActive && role.IsActive &&
+                          account.DomainUserName == normalizedUserName &&
+                          role.RoleName == "Admin"
+                    select account.Id).AnyAsync(cancellationToken);
+        }
+
+        public async Task<ServiceResult<UserDto>> ToggleActiveAsync(
+            int id,
+            bool isActive,
+            int? currentUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var account = await _ctx.IDMAccounts
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (account == null)
+            {
+                return ServiceResult<UserDto>.NotFound("Usuario no encontrado.");
+            }
+
+            account.IsActive = isActive;
+            account.UpdatedDate = DateTime.UtcNow;
+            account.UpdatedBy = currentUserId;
+
+            await _ctx.SaveChangesAsync(cancellationToken);
+
+            return await GetByIdAsync(id, cancellationToken);
+        }
+            }
+        }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MultipleFormat.Application.Modules.PermissionsRequest;
 using MultipleFormat.Application.Modules.PermissionsRequest.DTOs;
 using NewProject.Application.Common.CurrentUser;
@@ -7,6 +8,7 @@ using NewProject.Common.Results;
 namespace MultipleFormat.Web.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/permission-request")]
     public class PermissionRequestController : ControllerBase
     {
@@ -23,9 +25,14 @@ namespace MultipleFormat.Web.Controllers
         public async Task<IActionResult> CreatePermissionRequest([FromBody] PermissionCreateRequestDTO dto)
         {
             var currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, HttpContext.RequestAborted);
-            if (!currentUserResult.IsSuccess || currentUserResult.Data?.AccountId is not int createdById)
+            if (!currentUserResult.IsSuccess || currentUserResult.Data is not { AccountId: int createdById } currentUser)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "La cuenta del usuario no está configurada." });
+            }
+
+            if (dto.EmployeeId != currentUser.Id)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Solo puede crear solicitudes para sí mismo." });
             }
 
             var result = await _permissionRequestService.CreatePermissionRequest(dto, createdById);

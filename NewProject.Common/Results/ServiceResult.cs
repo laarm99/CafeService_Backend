@@ -29,6 +29,16 @@ namespace NewProject.Common.Results
             };
         }
 
+        public static ServiceResult<T> Forbidden(string message)
+        {
+            return new ServiceResult<T>
+            {
+                IsSuccess = false,
+                Message = message,
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
+
         public static ServiceResult<T> Created(T data)
         {
             return new ServiceResult<T>

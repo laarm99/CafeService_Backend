@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using MultipleFormat.Application.Modules.VacationsRequest;
 using MultipleFormat.Application.Modules.VacationsRequest.DTOs;
 using NewProject.Application.Common.CurrentUser;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 namespace MultipleFormat.Web.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/vacation-request")]
     public class VacationRequestController : ControllerBase
     {

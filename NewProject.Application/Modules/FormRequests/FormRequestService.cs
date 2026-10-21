@@ -16,11 +16,26 @@ namespace MultipleFormat.Application.Modules.FormRequests
             _ctx = ctx;
         }
 
-        public async Task<ServiceResult<List<FormRequestSummaryDto>>> GetVisibleAsync(
+        public async Task<ServiceResult<PagedFormRequestResultDto>> GetVisibleAsync(
             CurrentUserDto currentUser,
+            FormRequestFilterDto? filter = null,
             CancellationToken cancellationToken = default)
         {
             var roleNames = await GetRoleNamesAsync(currentUser, cancellationToken);
+
+            if (filter != null && (filter.Page < 1 || filter.PageSize < 1 || filter.PageSize > 100))
+            {
+                return ServiceResult<PagedFormRequestResultDto>.BadRequest(
+                    "Page debe ser mayor o igual a 1 y PageSize debe estar entre 1 y 100.");
+            }
+
+            if (filter?.StartDate.HasValue == true &&
+                filter.EndDate.HasValue &&
+                filter.StartDate.Value.Date > filter.EndDate.Value.Date)
+            {
+                return ServiceResult<PagedFormRequestResultDto>.BadRequest(
+                    "La fecha inicial no puede ser posterior a la fecha final.");
+            }
 
             var isAdmin = roleNames.Any(x => x == nameof(Roles.Admin));
             var isSupervisor = roleNames.Any(x => x == nameof(Roles.Supervisor));
@@ -28,7 +43,7 @@ namespace MultipleFormat.Application.Modules.FormRequests
 
             if (!isAdmin && !isSupervisor && !isGeneralUser)
             {
-                return ServiceResult<List<FormRequestSummaryDto>>.NotFound("El usuario no tiene un rol habilitado.");
+                return ServiceResult<PagedFormRequestResultDto>.NotFound("El usuario no tiene un rol habilitado.");
             }
 
             var query = from formRequest in _ctx.FormRequests.AsNoTracking()
@@ -45,9 +60,8 @@ namespace MultipleFormat.Application.Modules.FormRequests
                 if (isSupervisor && currentUser.SupervisorId.HasValue)
                 {
                     query = query.Where(x =>
-                        (currentUser.AccountId.HasValue &&
-                         x.FormRequest.CreatedById == currentUser.AccountId.Value) ||
-                        x.Employee.SupervisorId == currentUser.SupervisorId.Value);
+                        x.Employee.SupervisorId == currentUser.SupervisorId.Value &&
+                        x.FormRequest.FormType == FormType.DepartmentShiftChange);
                 }
                 else if (isGeneralUser && currentUser.Id > 0)
                 {
@@ -55,12 +69,56 @@ namespace MultipleFormat.Application.Modules.FormRequests
                 }
                 else
                 {
-                    return ServiceResult<List<FormRequestSummaryDto>>.Success(new List<FormRequestSummaryDto>());
+                    return ServiceResult<PagedFormRequestResultDto>.Success(new PagedFormRequestResultDto
+                    {
+                        Page = filter?.Page ?? 1,
+                        PageSize = filter?.PageSize ?? 25
+                    });
                 }
             }
 
+            if (filter?.FormType is FormType formType)
+            {
+                query = query.Where(x => x.FormRequest.FormType == formType);
+            }
+
+            if (filter?.Status is RequestStatus status)
+            {
+                query = query.Where(x => x.FormRequest.Status == status);
+            }
+
+            if (filter?.StartDate is DateTime startDate)
+            {
+                query = query.Where(x => x.FormRequest.CreatedDate >= startDate);
+            }
+
+            if (filter?.EndDate is DateTime endDate)
+            {
+                var exclusiveEndDate = endDate.Date.AddDays(1);
+                query = query.Where(x => x.FormRequest.CreatedDate < exclusiveEndDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter?.Search))
+            {
+                var search = filter.Search.Trim();
+                query = query.Where(x =>
+                    x.FormRequest.Id.ToString().Contains(search) ||
+                    x.Employee.FullName.Contains(search) ||
+                    x.Employee.EmployeeNumber.Contains(search));
+            }
+
+            var page = filter?.Page ?? 1;
+            var pageSize = filter?.PageSize ?? 25;
+            var totalCount = await query.CountAsync(cancellationToken);
+            var totalPages = totalCount == 0
+                ? 0
+                : (int)Math.Ceiling(totalCount / (double)pageSize);
+
             var requests = await query
                 .OrderByDescending(x => x.FormRequest.CreatedDate)
+                .ThenByDescending(x => x.FormRequest.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(x => new FormRequestSummaryDto
                 {
                     Id = x.FormRequest.Id,
@@ -71,11 +129,19 @@ namespace MultipleFormat.Application.Modules.FormRequests
                     Status = x.FormRequest.Status,
                     CreatedDate = x.FormRequest.CreatedDate,
                     SubmittedDate = x.FormRequest.SubmittedDate,
-                    Comments = x.FormRequest.Comments
+                    Comments = x.FormRequest.Comments,
+                    Approver = x.Employee.SupervisorName
                 })
                 .ToListAsync(cancellationToken);
 
-            return ServiceResult<List<FormRequestSummaryDto>>.Success(requests);
+            return ServiceResult<PagedFormRequestResultDto>.Success(new PagedFormRequestResultDto
+            {
+                Items = requests,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            });
         }
 
         public async Task<ServiceResult<FormRequestDetailDto>> GetVisibleDetailAsync(
@@ -110,8 +176,9 @@ namespace MultipleFormat.Application.Modules.FormRequests
 
             var canView = isAdmin ||
                 (isSupervisor &&
-                 ((currentUser.AccountId.HasValue && request.FormRequest.CreatedById == currentUser.AccountId.Value) ||
-                  (currentUser.SupervisorId.HasValue && request.Employee.SupervisorId == currentUser.SupervisorId.Value))) ||
+                 currentUser.SupervisorId.HasValue &&
+                 request.Employee.SupervisorId == currentUser.SupervisorId.Value &&
+                 request.FormRequest.FormType == FormType.DepartmentShiftChange) ||
                 (isGeneralUser && currentUser.Id > 0 && request.FormRequest.EmployeeId == currentUser.Id);
 
             if (!canView)

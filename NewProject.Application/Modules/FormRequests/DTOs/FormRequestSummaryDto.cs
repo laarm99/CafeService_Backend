@@ -13,5 +13,6 @@ namespace MultipleFormat.Application.Modules.FormRequests.DTOs
         public DateTime CreatedDate { get; set; }
         public DateTime? SubmittedDate { get; set; }
         public string? Comments { get; set; }
+        public string? Approver { get; set; }
     }
 }

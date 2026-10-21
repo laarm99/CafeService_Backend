@@ -5,6 +5,7 @@ using NewProject.Common.Results;
 using NewProject.Domain.Entities.IDM;
 using NewProject.Infrastructure.Persistence;
 using System.Globalization;
+using System.Net.Mail;
 using System.Text;
 
 namespace MultipleFormat.Application.Modules.Supervisors
@@ -18,11 +19,13 @@ namespace MultipleFormat.Application.Modules.Supervisors
             _ctx = ctx;
         }
 
-        public async Task<ServiceResult<List<SupervisorDto>>> GetActiveAsync(CancellationToken cancellationToken = default)
+        public async Task<ServiceResult<List<SupervisorDto>>> GetAsync(
+            bool includeInactive = true,
+            CancellationToken cancellationToken = default)
         {
             var supervisors = await _ctx.Supervisors
                 .AsNoTracking()
-                .Where(x => x.IsActive)
+                .Where(x => includeInactive || x.IsActive)
                 .OrderBy(x => x.FullName)
                 .Select(x => new SupervisorDto
                 {
@@ -35,6 +38,76 @@ namespace MultipleFormat.Application.Modules.Supervisors
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<List<SupervisorDto>>.Success(supervisors);
+        }
+
+        public async Task<ServiceResult<SupervisorDto>> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            var supervisor = await _ctx.Supervisors
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => new SupervisorDto
+                {
+                    Id = x.Id,
+                    FullName = x.FullName,
+                    DomainUserName = x.DomainUserName,
+                    Email = x.Email,
+                    IsActive = x.IsActive
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return supervisor == null
+                ? ServiceResult<SupervisorDto>.NotFound("Supervisor no encontrado.")
+                : ServiceResult<SupervisorDto>.Success(supervisor);
+        }
+
+        public async Task<ServiceResult<SupervisorDto>> UpdateAsync(
+            int id,
+            UpdateSupervisorRequest request,
+            int? currentUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var domainUserName = NormalizeDomainUserName(request.DomainUserName);
+            if (string.IsNullOrEmpty(domainUserName))
+            {
+                return ServiceResult<SupervisorDto>.BadRequest("El NetKey es requerido.");
+            }
+
+            var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+            if (email != null && !MailAddress.TryCreate(email, out _))
+            {
+                return ServiceResult<SupervisorDto>.BadRequest("El correo electrónico no es válido.");
+            }
+
+            var supervisor = await _ctx.Supervisors
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (supervisor == null)
+            {
+                return ServiceResult<SupervisorDto>.NotFound("Supervisor no encontrado.");
+            }
+
+            if (await _ctx.Supervisors.AnyAsync(
+                    x => x.Id != id && x.DomainUserName == domainUserName,
+                    cancellationToken))
+            {
+                return ServiceResult<SupervisorDto>.Conflict("El NetKey ya está asignado a otro supervisor.");
+            }
+
+            if (email != null && await _ctx.Supervisors.AnyAsync(
+                    x => x.Id != id && x.Email != null && x.Email.ToUpper() == email.ToUpper(),
+                    cancellationToken))
+            {
+                return ServiceResult<SupervisorDto>.Conflict("El correo ya está asignado a otro supervisor.");
+            }
+
+            supervisor.DomainUserName = domainUserName;
+            supervisor.Email = email;
+            supervisor.UpdatedDate = DateTime.UtcNow;
+            supervisor.UpdatedBy = currentUserId;
+            await _ctx.SaveChangesAsync(cancellationToken);
+
+            return await GetByIdAsync(id, cancellationToken);
         }
 
         public async Task<ServiceResult<int>> SyncFromEmployeesAsync(CancellationToken cancellationToken = default)
@@ -177,6 +250,29 @@ namespace MultipleFormat.Application.Modules.Supervisors
                 .Normalize(NormalizationForm.FormC)
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 .ToUpperInvariant();
+        }
+
+        public async Task<ServiceResult<SupervisorDto>> ToggleActiveAsync(
+            int id,
+            bool isActive,
+            int? currentUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var supervisor = await _ctx.Supervisors
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (supervisor == null)
+            {
+                return ServiceResult<SupervisorDto>.NotFound("Supervisor no encontrado.");
+            }
+
+            supervisor.IsActive = isActive;
+            supervisor.UpdatedDate = DateTime.UtcNow;
+            supervisor.UpdatedBy = currentUserId;
+
+            await _ctx.SaveChangesAsync(cancellationToken);
+
+            return await GetByIdAsync(id, cancellationToken);
         }
     }
 }

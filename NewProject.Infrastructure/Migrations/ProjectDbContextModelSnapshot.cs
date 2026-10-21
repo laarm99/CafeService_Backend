@@ -399,6 +399,14 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("NORMALIZED_NAME");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int")
+                        .HasColumnName("UPDATED_BY");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATED_DATE");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DomainUserName")
@@ -407,6 +415,9 @@ namespace NewProject.Infrastructure.Migrations
 
                     b.HasIndex("NormalizedName")
                         .IsUnique();
+
+                    b.HasIndex("IsActive", "DomainUserName")
+                        .HasDatabaseName("IX_Supervisor_Active_DomainUserName");
 
                     b.ToTable("MFR_SUPERVISORS");
                 });
@@ -446,10 +457,21 @@ namespace NewProject.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("IS_ACTIVE");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int")
+                        .HasColumnName("UPDATED_BY");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATED_DATE");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DomainUserName")
                         .IsUnique();
+
+                    b.HasIndex("IsActive", "DomainUserName")
+                        .HasDatabaseName("IX_IDMAccount_Active_DomainUserName");
 
                     b.ToTable("IDM_ACCOUNT");
                 });

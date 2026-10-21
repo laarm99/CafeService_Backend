@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using MultipleFormat.Application.Modules.EmployeeInfo;
 using MultipleFormat.Application.Modules.EmployeeInfo.DTOs;
 using NewProject.Application.Common.CurrentUser;
@@ -11,6 +12,7 @@ using System.Collections.Generic;
 namespace MultipleFormat.Web.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/employee-info")]
     public class EmployeeInfoController : ControllerBase
     {

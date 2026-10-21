@@ -11,6 +11,8 @@ using NewProject.Common.Results;
 using System.Security.Principal;
 using Microsoft.AspNetCore.Http;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,6 +71,8 @@ public class AuthController : ControllerBase
                     });
             }
 
+            var roles = await GetActiveRoleNamesAsync(account.Id, cancellationToken);
+
             // Mantener la cuenta y sus roles existentes. Devolver DTO para no exponer la entidad EF directamente.
             IdmAccountDto existingDto = new IdmAccountDto
             {
@@ -76,6 +80,7 @@ public class AuthController : ControllerBase
                 FullName = account.FullName,
                 Email = account.Email,
                 IsActive = account.IsActive,
+                Roles = roles,
                 CreatedDate = account.CreatedDate
             };
 
@@ -135,12 +140,14 @@ public class AuthController : ControllerBase
 
             if (existing != null)
             {
+                var roles = await GetActiveRoleNamesAsync(existing.Id, cancellationToken);
                 IdmAccountDto existingDto = new IdmAccountDto
                 {
                     DomainUserName = existing.DomainUserName,
                     FullName = existing.FullName,
                     Email = existing.Email,
                     IsActive = existing.IsActive,
+                    Roles = roles,
                     CreatedDate = existing.CreatedDate
                 };
 
@@ -156,10 +163,23 @@ public class AuthController : ControllerBase
             FullName = newAccount.FullName,
             Email = newAccount.Email,
             IsActive = newAccount.IsActive,
+            Roles = new List<string> { defaultRole.RoleName },
             CreatedDate = newAccount.CreatedDate
         };
 
         return Ok(newDto);
 
+    }
+
+    private async Task<List<string>> GetActiveRoleNamesAsync(
+        int accountId,
+        CancellationToken cancellationToken)
+    {
+        return await (from accountRole in _ctx.IDMAccountRoles.AsNoTracking()
+                      join role in _ctx.IDMRoles.AsNoTracking()
+                          on accountRole.RoleId equals role.Id
+                      where accountRole.AccountId == accountId && role.IsActive
+                      select role.RoleName)
+            .ToListAsync(cancellationToken);
     }
 }

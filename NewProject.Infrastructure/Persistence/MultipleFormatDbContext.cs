@@ -53,8 +53,17 @@ namespace NewProject.Infrastructure.Persistence
                 entity.Property(x => x.CreatedDate)
                       .IsRequired();
 
+                entity.Property(x => x.UpdatedDate)
+                      .HasColumnName("UPDATED_DATE");
+
+                entity.Property(x => x.UpdatedBy)
+                      .HasColumnName("UPDATED_BY");
+
                 entity.HasIndex(x => x.DomainUserName)
                       .IsUnique();
+
+                entity.HasIndex(x => new { x.IsActive, x.DomainUserName })
+                      .HasName("IX_IDMAccount_Active_DomainUserName");
             });
 
             modelBuilder.Entity<IDMRole>(entity =>
@@ -282,12 +291,21 @@ namespace NewProject.Infrastructure.Persistence
                  entity.Property(x => x.CreatedDate)
                        .IsRequired();
 
+                 entity.Property(x => x.UpdatedDate)
+                       .HasColumnName("UPDATED_DATE");
+
+                 entity.Property(x => x.UpdatedBy)
+                       .HasColumnName("UPDATED_BY");
+
                  entity.HasIndex(x => x.NormalizedName)
                        .IsUnique();
 
                  entity.HasIndex(x => x.DomainUserName)
                        .IsUnique()
                        .HasFilter("[DOMAIN_USER_NAME] IS NOT NULL");
+
+                 entity.HasIndex(x => new { x.IsActive, x.DomainUserName })
+                       .HasName("IX_Supervisor_Active_DomainUserName");
              });
 
             base.OnModelCreating(modelBuilder);

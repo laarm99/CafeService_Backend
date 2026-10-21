@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MultipleFormat.Application.Modules.FormRequests;
+using MultipleFormat.Application.Modules.FormRequests.DTOs;
 using NewProject.Application.Common.CurrentUser;
+using System.Security.Claims;
 
 namespace NewProject.Controllers
 {
@@ -13,22 +15,27 @@ namespace NewProject.Controllers
     {
         private readonly FormRequestService _formRequestService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly FormRequestApprovalService _approvalService;
 
         public FormRequestController(
             FormRequestService formRequestService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            FormRequestApprovalService approvalService)
         {
             _formRequestService = formRequestService;
             _currentUserService = currentUserService;
+            _approvalService = approvalService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetVisible(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetVisible(
+            [FromQuery] FormRequestFilterDto? filter,
+            CancellationToken cancellationToken)
         {
             var currentUserResult = await _currentUserService
                 .GetCurrentEmployeeAsync(User, cancellationToken);
 
-            if (!currentUserResult.IsSuccess || currentUserResult.Data == null)
+            if (!currentUserResult.IsSuccess || currentUserResult.Data?.AccountId is not int)
             {
                 return StatusCode(
                     StatusCodes.Status403Forbidden,
@@ -40,7 +47,7 @@ namespace NewProject.Controllers
             }
 
             var result = await _formRequestService
-                .GetVisibleAsync(currentUserResult.Data, cancellationToken);
+                .GetVisibleAsync(currentUserResult.Data, filter, cancellationToken);
 
             if (!result.IsSuccess)
             {
@@ -52,13 +59,47 @@ namespace NewProject.Controllers
             return Ok(result);
         }
 
+        [HttpPost("{id:int}/approve")]
+        public async Task<IActionResult> Approve(
+            int id,
+            FormRequestDecisionDto decision,
+            CancellationToken cancellationToken)
+        {
+            var result = await _approvalService.ApproveAsync(
+                id,
+                User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name,
+                decision,
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result)
+                : StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpPost("{id:int}/reject")]
+        public async Task<IActionResult> Reject(
+            int id,
+            FormRequestDecisionDto decision,
+            CancellationToken cancellationToken)
+        {
+            var result = await _approvalService.RejectAsync(
+                id,
+                User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name,
+                decision,
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result)
+                : StatusCode((int)result.StatusCode, result);
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetDetail(int id, CancellationToken cancellationToken)
         {
             var currentUserResult = await _currentUserService
                 .GetCurrentEmployeeAsync(User, cancellationToken);
 
-            if (!currentUserResult.IsSuccess || currentUserResult.Data == null)
+            if (!currentUserResult.IsSuccess || currentUserResult.Data?.AccountId is not int)
             {
                 return StatusCode(
                     StatusCodes.Status403Forbidden,
