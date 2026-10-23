@@ -21,6 +21,12 @@ namespace MultipleFormat.Application.Modules.TimesAdjustmentRequest
 
         public async Task<ServiceResult<int>> CreateTimeAdjustmentRequest(TimeAdjustmentCreateRequestDTO dto, int employeeId, int createdById, CancellationToken cancellationToken = default)
         {
+            var dateError = NewProject.Application.Common.Rules.RequestDateRules.ValidateAdjustmentDate(dto.AdjustmentDate);
+            if (dateError != null)
+            {
+                return ServiceResult<int>.BadRequest(dateError);
+            }
+
             FormRequest formRequestData = new()
             {
                 EmployeeId = employeeId,

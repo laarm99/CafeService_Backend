@@ -26,6 +26,9 @@ namespace NewProject.Controllers
         [HttpPost("create-change-request")]
         public async Task<IActionResult> CreateChangeRequest(ChangesDepOrShiftCreateRequestDTO dto)
         {
+            // Deshabilitado temporalmente: el cliente evalua si se usara este formato.
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "La solicitud de cambio de departamento/turno no está habilitada." });
+#pragma warning disable CS0162
             var currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, HttpContext.RequestAborted);
             if (!currentUserResult.IsSuccess || currentUserResult.Data is not { AccountId: int createdById } currentUser)
             {
@@ -45,6 +48,25 @@ namespace NewProject.Controllers
             }
 
             return Ok(result);
+        }
+
+        [HttpGet("supervised-employees")]
+        public async Task<IActionResult> GetSupervisedEmployees(CancellationToken cancellationToken)
+        {
+            var currentUserResult = await _currentUserService.GetCurrentEmployeeAsync(User, cancellationToken);
+            if (!currentUserResult.IsSuccess || currentUserResult.Data == null)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = currentUserResult.Message ?? "El usuario no tiene acceso habilitado a la aplicaciÃ³n." });
+            }
+
+            var supervisorId = currentUserResult.Data.SupervisorId;
+            if (!supervisorId.HasValue)
+            {
+                return Ok(ServiceResult<List<SupervisedEmployeeDto>>.Success(new List<SupervisedEmployeeDto>()));
+            }
+
+            var result = await _changesDepOrShiftRequestService.GetSupervisedEmployeesAsync(supervisorId.Value, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [HttpGet("get-change-request-data")]

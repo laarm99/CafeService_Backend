@@ -8,6 +8,6 @@ namespace MultipleFormat.Domain.Common.Enums
     {
         Entry = 1,
         Exit = 2,
-        Booyh = 3
+        Both = 3
     }
 }

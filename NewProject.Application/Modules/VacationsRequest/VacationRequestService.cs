@@ -40,6 +40,12 @@ namespace MultipleFormat.Application.Modules.VacationsRequest
                 return ServiceResult<int>.BadRequest("ReturnDate cannot be before EndDate.");
             }
 
+            var dateError = NewProject.Application.Common.Rules.RequestDateRules.ValidateRange(dto.StartDate, dto.EndDate, dto.ReturnDate);
+            if (dateError != null)
+            {
+                return ServiceResult<int>.BadRequest(dateError);
+            }
+
             var formRequestData = new FormRequest()
             {
                 EmployeeId = employeeId,

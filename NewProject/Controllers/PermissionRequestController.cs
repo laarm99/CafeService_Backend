@@ -30,10 +30,12 @@ namespace MultipleFormat.Web.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "La cuenta del usuario no está configurada." });
             }
 
-            if (dto.EmployeeId != currentUser.Id)
+            if (dto.EmployeeId != 0 && dto.EmployeeId != currentUser.Id)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Solo puede crear solicitudes para sí mismo." });
             }
+
+            dto.EmployeeId = currentUser.Id;
 
             var result = await _permissionRequestService.CreatePermissionRequest(dto, createdById);
             if (!result.IsSuccess)

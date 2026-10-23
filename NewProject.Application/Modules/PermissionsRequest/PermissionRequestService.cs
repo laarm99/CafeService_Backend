@@ -14,11 +14,16 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
     {
         private readonly MultipleFormatDbContext _ctx;
         private readonly FormRequestApprovalService _approvalService;
+        private readonly NewProject.Application.Common.Storage.AttachmentStorage _attachments;
 
-        public PermissionRequestService(MultipleFormatDbContext ctx, FormRequestApprovalService approvalService)
+        public PermissionRequestService(
+            MultipleFormatDbContext ctx,
+            FormRequestApprovalService approvalService,
+            NewProject.Application.Common.Storage.AttachmentStorage attachments)
         {
             _ctx = ctx;
             _approvalService = approvalService;
+            _attachments = attachments;
         }
 
         public async Task<ServiceResult<int>> CreatePermissionRequest(PermissionCreateRequestDTO dto, int createdById, CancellationToken cancellationToken = default)
@@ -28,6 +33,20 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
                 && (dto.Attachments == null || dto.Attachments.Count == 0))
             {
                 return ServiceResult<int>.BadRequest("Adjuntos comprobatorios requeridos para el tipo de permiso seleccionado.");
+            }
+
+            var dateError = dto.EndDate.HasValue && dto.ReturnDate.HasValue
+                ? NewProject.Application.Common.Rules.RequestDateRules.ValidateRange(dto.StartDate, dto.EndDate.Value, dto.ReturnDate.Value)
+                : NewProject.Application.Common.Rules.RequestDateRules.ValidateStart(dto.StartDate, "La fecha de inicio");
+            if (dateError != null)
+            {
+                return ServiceResult<int>.BadRequest(dateError);
+            }
+
+            var attachmentError = _attachments.Validate(dto.Attachments);
+            if (attachmentError != null)
+            {
+                return ServiceResult<int>.BadRequest(attachmentError);
             }
 
             FormRequest formRequestData = new()
@@ -61,7 +80,7 @@ namespace MultipleFormat.Application.Modules.PermissionsRequest
 
             await _ctx.SaveChangesAsync(cancellationToken);
 
-            // Note: file saving for Attachments is not implemented here. Save files to storage and persist references in a separate table.
+            await _attachments.SaveAsync(formRequestData.Id, dto.Attachments, cancellationToken);
 
             return ServiceResult<int>.Success(formRequestData.Id);
         }

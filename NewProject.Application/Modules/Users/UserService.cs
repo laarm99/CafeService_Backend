@@ -116,12 +116,15 @@ namespace NewProject.Application.Modules.Users
             var accountRoles = await _ctx.IDMAccountRoles
                 .Where(x => x.AccountId == id)
                 .ToListAsync(cancellationToken);
-            _ctx.IDMAccountRoles.RemoveRange(accountRoles);
-            _ctx.IDMAccountRoles.Add(new IDMAccountRole
+            _ctx.IDMAccountRoles.RemoveRange(accountRoles.Where(x => x.RoleId != role.Id));
+            if (!accountRoles.Any(x => x.RoleId == role.Id))
             {
-                AccountId = id,
-                RoleId = role.Id
-            });
+                _ctx.IDMAccountRoles.Add(new IDMAccountRole
+                {
+                    AccountId = id,
+                    RoleId = role.Id
+                });
+            }
 
             account.UpdatedDate = DateTime.UtcNow;
             account.UpdatedBy = currentUserId;
@@ -153,12 +156,6 @@ namespace NewProject.Application.Modules.Users
                 return ServiceResult<UserDto>.BadRequest("Uno o más roles indicados no existen o están inactivos.");
             }
 
-            // Validar regla: No se puede mezclar "Admin" con "GeneralUser"
-            if (roleNames.Contains("Admin") && roleNames.Contains("GeneralUser"))
-            {
-                return ServiceResult<UserDto>.BadRequest("No se puede asignar simultáneamente los roles Admin y GeneralUser.");
-            }
-
             // Verificar que la cuenta existe
             var account = await _ctx.IDMAccounts
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -167,13 +164,17 @@ namespace NewProject.Application.Modules.Users
                 return ServiceResult<UserDto>.NotFound("Usuario no encontrado.");
             }
 
-            // Reemplazar todas las relaciones de roles
+            // Sincronizar por diferencias: la llave es (AccountId, RoleId) y no se puede borrar y reinsertar el mismo par.
             var existingAccountRoles = await _ctx.IDMAccountRoles
                 .Where(x => x.AccountId == id)
                 .ToListAsync(cancellationToken);
-            _ctx.IDMAccountRoles.RemoveRange(existingAccountRoles);
+            var targetRoleIds = roles.Select(r => r.Id).ToHashSet();
 
-            foreach (var role in roles)
+            _ctx.IDMAccountRoles.RemoveRange(
+                existingAccountRoles.Where(x => !targetRoleIds.Contains(x.RoleId)));
+
+            var existingRoleIds = existingAccountRoles.Select(x => x.RoleId).ToHashSet();
+            foreach (var role in roles.Where(r => !existingRoleIds.Contains(r.Id)))
             {
                 _ctx.IDMAccountRoles.Add(new IDMAccountRole
                 {

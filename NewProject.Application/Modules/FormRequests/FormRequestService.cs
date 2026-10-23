@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MultipleFormat.Application.Modules.FormRequests.DTOs;
 using MultipleFormat.Domain.Common.Enums;
 using NewProject.Application.Common.CurrentUser;
@@ -10,10 +10,14 @@ namespace MultipleFormat.Application.Modules.FormRequests
     public class FormRequestService
     {
         private readonly MultipleFormatDbContext _ctx;
+        private readonly NewProject.Application.Common.Storage.AttachmentStorage _attachments;
 
-        public FormRequestService(MultipleFormatDbContext ctx)
+        public FormRequestService(
+            MultipleFormatDbContext ctx,
+            NewProject.Application.Common.Storage.AttachmentStorage attachments)
         {
             _ctx = ctx;
+            _attachments = attachments;
         }
 
         public async Task<ServiceResult<PagedFormRequestResultDto>> GetVisibleAsync(
@@ -59,9 +63,13 @@ namespace MultipleFormat.Application.Modules.FormRequests
             {
                 if (isSupervisor && currentUser.SupervisorId.HasValue)
                 {
+                    var supervisorId = currentUser.SupervisorId.Value;
+                    var ownEmployeeId = isGeneralUser ? currentUser.Id : 0;
+                    // Multirol: sus subordinados (sin cambio de depto/turno) y, si ademas es General, sus propias solicitudes.
                     query = query.Where(x =>
-                        x.Employee.SupervisorId == currentUser.SupervisorId.Value &&
-                        x.FormRequest.FormType == FormType.DepartmentShiftChange);
+                        (x.Employee.SupervisorId == supervisorId &&
+                         x.FormRequest.FormType != FormType.DepartmentShiftChange) ||
+                        (ownEmployeeId > 0 && x.FormRequest.EmployeeId == ownEmployeeId));
                 }
                 else if (isGeneralUser && currentUser.Id > 0)
                 {
@@ -144,6 +152,27 @@ namespace MultipleFormat.Application.Modules.FormRequests
             });
         }
 
+        public async Task<ServiceResult<bool>> CancelAsync(
+            int id,
+            CurrentUserDto currentUser,
+            CancellationToken cancellationToken = default)
+        {
+            var formRequest = await _ctx.FormRequests.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (formRequest == null || formRequest.EmployeeId != currentUser.Id)
+            {
+                return ServiceResult<bool>.NotFound("Solicitud no encontrada.");
+            }
+
+            if (formRequest.Status != RequestStatus.Submitted)
+            {
+                return ServiceResult<bool>.BadRequest("Solo se pueden cancelar solicitudes que aún no han sido aprobadas ni rechazadas.");
+            }
+
+            formRequest.Status = RequestStatus.Cancelled;
+            await _ctx.SaveChangesAsync(cancellationToken);
+            return ServiceResult<bool>.Success(true);
+        }
+
         public async Task<ServiceResult<FormRequestDetailDto>> GetVisibleDetailAsync(
             int id,
             CurrentUserDto currentUser,
@@ -178,7 +207,7 @@ namespace MultipleFormat.Application.Modules.FormRequests
                 (isSupervisor &&
                  currentUser.SupervisorId.HasValue &&
                  request.Employee.SupervisorId == currentUser.SupervisorId.Value &&
-                 request.FormRequest.FormType == FormType.DepartmentShiftChange) ||
+                 request.FormRequest.FormType != FormType.DepartmentShiftChange) ||
                 (isGeneralUser && currentUser.Id > 0 && request.FormRequest.EmployeeId == currentUser.Id);
 
             if (!canView)
@@ -274,6 +303,9 @@ namespace MultipleFormat.Application.Modules.FormRequests
                         detail.EndDate = permission.EndDate;
                         detail.ReturnDate = permission.ReturnDate;
                         detail.SwapDetail = permission.SwapDetail;
+                        detail.Attachments = _attachments.List(id)
+                            .Select(x => new FormRequestAttachmentDto { Id = x.Id, Name = x.Name, FileName = x.Name })
+                            .ToList();
                     }
                     break;
 

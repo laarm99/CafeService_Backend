@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MultipleFormat.Application.Modules.FormRequests.DTOs;
 using MultipleFormat.Domain.Common.Enums;
 using NewProject.Common.Results;
@@ -123,7 +123,7 @@ namespace MultipleFormat.Application.Modules.FormRequests
                 return ServiceResult<bool>.NotFound("Solicitud no encontrada.");
             }
 
-            if (request.FormRequest.FormType != FormType.DepartmentShiftChange)
+            if (request.FormRequest.FormType == FormType.DepartmentShiftChange)
             {
                 return ServiceResult<bool>.BadRequest("Este tipo de solicitud no está habilitado para aprobación.");
             }
